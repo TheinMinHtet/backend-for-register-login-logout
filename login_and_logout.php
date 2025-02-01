@@ -7,7 +7,7 @@ use Firebase\JWT\Key;
 require 'vendor/autoload.php';
 require 'database_connection.php';
 
-define('JWT_SECRET', getenv('JWT_SECRET'));
+define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
 
 function generateJWT($user_id, $username, $email) {
     $payload = [
