@@ -43,6 +43,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit;
             }
 
+            if (!preg_match("/^\d{2,15}$/", $phone)) {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid phone number format.']);
+                exit;
+            }
+
             if ($password !== $confirm_psw) {
                 echo json_encode(["error" => "Passwords do not match. Please try again."]);
                 exit;
