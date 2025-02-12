@@ -2,7 +2,7 @@ class navigation extends HTMLElement {
     constructor() {
         super()
         this.innerHTML = `  
-        <div class="flex flex-row w-full px-[5%] py-5 items-center gap-5">  
+        <div class="bg-[#F1F5F9] flex flex-row w-full px-[5%] py-5 items-center gap-5 fixed z-[100]">  
         <div class="flex flex-row gap-9">
              <rounded-icon>
                 <svg width="24" height="24" viewBox="0 0 47 46" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -19,7 +19,8 @@ class navigation extends HTMLElement {
              <rounded-icon  notiNo="2" class="relative">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bell"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             </rounded-icon>
-            <pro-file class="flex items-center hover:cursor-pointer"></pro-file>
+            <pro-file  size="40px"></pro-file>
+                
         
         </div>
            
