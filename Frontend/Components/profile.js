@@ -4,15 +4,17 @@ class profile extends HTMLElement {
         this.isActive = false;
         this.borderElement = null;
         const size = this.getAttribute("size") || "";
+        const clickable = this.getAttribute("clickable") || "yes";
         this.innerHTML = `
         <div class="relative" >
-            <div style="width: ${size}; height: ${size}" class="box-border  bg-[url('./image/profile.jfif')] border-4 border-[#F1F5F9] shadow-[0px_4px_4px_rgba(0,_0,_0,_0.25),_0px_4px_4px_#C4D3E0,_5px_-3px_4px_#C4D3E0] rounded-full bg-cover bg-center cursor-pointer hover:shadow-[0px_6px_10px_rgba(0,_0,_0,_0.25),_0px_6px_8px_#C4D3E0,_8px_-4px_6px_#C4D3E0] 
+            <div style="width: ${size}; height: ${size}" class="box-border  bg-[url('./image/profile.jfif')] border-4 border-[#F1F5F9] shadow-[0px_4px_4px_rgba(0,_0,_0,_0.25),_0px_4px_4px_#C4D3E0,_5px_-3px_4px_#C4D3E0] rounded-full bg-cover bg-center ${(clickable !== "no") ? "cursor-pointer" : "" } hover:shadow-[0px_6px_10px_rgba(0,_0,_0,_0.25),_0px_6px_8px_#C4D3E0,_8px_-4px_6px_#C4D3E0] 
     transition-all  duration-300">
             </div>
         </div>
         `;
-           
-        this.addEventListener('click', this.toggleBorder);
+
+        if(clickable !== "no") {
+            this.addEventListener('click', this.toggleBorder);
         
         // Add document click listener to handle clicks outside
         document.addEventListener('click', (event) => {
@@ -21,6 +23,10 @@ class profile extends HTMLElement {
                 this.closeMenu();
             }
         });
+
+        }
+           
+        
     }
 
     closeMenu() {
