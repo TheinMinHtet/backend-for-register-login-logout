@@ -14,10 +14,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Case: User clicks "Send OTP"
     if (isset($input['send_otp'])) {
-        
+
         // Check if all required fields are set
         if (isset($input['username'], $input['email'], $input['password'], $input['confirm_psw'], $input['country_code'], $input['phone'], $input['tele_user_name'])) {
-            
+
             // Sanitize and validate inputs
             $username = htmlspecialchars(trim($input['username']));
             $email = htmlspecialchars(trim($input['email']));
@@ -114,7 +114,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ]);
         }
     }
-    
+
 
     // Case: User clicks "Register" (Verify OTP)
     elseif (isset($input['register'])) {
@@ -143,7 +143,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 echo json_encode(["success" => "Registration successful! You are now verified."]);
             } else {
                 echo json_encode(["error" => "Invalid OTP. Please try again."]);
-            }            
+            }
         }
     }
 
@@ -183,7 +183,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 // Function to send OTP via email
-function sendOTPEmail($email, $otp) {
+function sendOTPEmail($email, $otp)
+{
     $mail = new PHPMailer(true);
     try {
         $mail->isSMTP();
@@ -219,4 +220,3 @@ function sendOTPEmail($email, $otp) {
         echo json_encode(["error" => "Failed to send OTP email. Please try again later."]);
     }
 }
-?>
