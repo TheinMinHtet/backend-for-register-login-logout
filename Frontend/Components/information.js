@@ -32,7 +32,7 @@ class Information extends HTMLElement {
                 ${this.data.map(item => `
                     <div class="rounded-full px-[10px] py-[5px] shadow-[7px_3px_4px_#1E1E1E,-3px_-3px_11px_rgba(149,147,147,0.25)] font-normal leading-[23px] text-xl flex gap-[10px] bg-[${this.getRandomColor()}] w-fit">
                         ${item.two}
-                        <div class="bg-[#2F2F2F] rounded-full min-w-[68px] px-2 py-1 font-normal text-base leading-[19px] text-[${this.getRandomColor2()}] text-center">
+                        <div style="color: ${this.getRandomColor2()}" class="bg-[#2F2F2F] rounded-full min-w-[68px] px-2 py-1 font-normal text-base leading-[19px] text-center">
                             ${item.one}
                         </div>
                     </div>
