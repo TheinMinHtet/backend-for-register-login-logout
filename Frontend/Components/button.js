@@ -12,7 +12,7 @@ class Button extends HTMLElement {
    
     render() {
         this.innerHTML = `
-            <button style="box-shadow: ${this.border}; background-color: ${this.color}" class="p-4 min-w-[150px] rounded-full bg-[#2F2F2F] hover:cursor-pointer">
+            <button style="box-shadow: ${this.border}; background-color: ${this.color}" class="p-3 min-w-[150px] rounded-full bg-[#2F2F2F] hover:cursor-pointer">
                 ${this.text}
             </button>
         `;
