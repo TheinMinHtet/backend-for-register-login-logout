@@ -15,7 +15,7 @@ function generateJWT($user_id, $username, $email) {
         'username' => $username,
         'email' => $email,
         'iat' => time(),
-        'exp' => time() + 3600
+        'exp' => time() + 86400
     ];
     return JWT::encode($payload, JWT_SECRET, 'HS256');
 }
