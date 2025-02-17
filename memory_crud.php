@@ -99,6 +99,12 @@ if ($token) {
                     $stmt->close();
                 }
 
+                $updatePointsQuery = "UPDATE user SET points = points + 10 WHERE user_id = ?";
+                $stmt = $conn->prepare($updatePointsQuery);
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $stmt->close();
+
                 echo json_encode(["status" => "success", "message" => "Image and description added successfully, log updated"]);
             } else {
                 echo json_encode(["status" => "error", "message" => "Failed to insert memory"]);
