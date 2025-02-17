@@ -16,6 +16,8 @@ class Skill extends HTMLElement {
 
         const description = this.getAttribute("description") || "";
         const title = this.getAttribute("title") || "";
+        const color = this.getAttribute("color") || "#2F2F2F";
+        const border = this.getAttribute("border") || "8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF";
 
         //`Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut eu mollis tortor, sed posuere elit. Pellentesque sed imperdiet arcu, non interdum libero. Mauris non mi id enim volutpat efficitur. Donec quis eros at nunc maximus tristique. Nunc pretium risus magna, et vehicula leo tincidunt nec. Mauris mollis vehicula ante ac sollicitudin. Nullam non justo at purus accumsan aliquam.
 
@@ -40,8 +42,8 @@ class Skill extends HTMLElement {
             padding: 24px;
             gap: 17px;
             width: 496px;
-            background: #F1F5F9;
-            box-shadow: 8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF;
+            background: ${color};
+            box-shadow: ${border};
             border-radius: 24px;
             min-height: 390px;
         ">
