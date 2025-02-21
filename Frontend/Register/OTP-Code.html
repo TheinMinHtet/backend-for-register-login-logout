@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="reg.css">
+    <title>OTP Code</title>
+</head>
+<body>
+    <div class="container">
+        <form id="register-card" class="register-card" action="/">
+            <h1>Verify OTP</h1>
+            <div class="otp-form">
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(1)' maxlength=1 >
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(2)' maxlength=1 >
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(3)' maxlength=1 >
+                <input class="otp" type="text" oninput='digitValidate(this)'onkeyup='tabChange(4)' maxlength=1 >
+                <button class="submit-btn">Verify OTP</button>
+                <a href="#" style="text-decoration: none; color: black;"><p id="resend-otp">Resend OTP?</p></a>
+            </div>
+        </form>
+    </div>
+    <script>
+        let digitValidate = function(ele){
+            console.log(ele.value);
+            ele.value = ele.value.replace(/[^0-9]/g,'');
+          }
+          
+          let tabChange = function(val){
+              let ele = document.querySelectorAll('input');
+              if(ele[val-1].value != ''){
+                ele[val].focus()
+              }else if(ele[val-1].value == ''){
+                ele[val-2].focus()
+              }   
+           }
+    </script>
+</body>
+</html>
