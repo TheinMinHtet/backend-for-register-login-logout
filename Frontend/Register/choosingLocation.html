@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <title>Choose your Location</title>
+    <link rel="stylesheet" href="reg.css">
+  </head>
+  <body>
+    <div class="container">
+        <div id="register-card" class="register-card" action="/">
+            <h1>Please Choose Location</h1>
+            <div class="input-group">
+                <select class="form-select country" aria-label="Default select example" onchange="loadStates()">
+                    <option selected>Country</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <select class="form-select state" aria-label="Default select example" onchange="loadCities()">
+                    <option selected>Region</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <select class="form-select city" aria-label="Default select example">
+                    <option selected>City</option>
+                </select>
+            </div>
+            <button class="submit-btn" onclick="nextPage()">Submit</button>
+        </div>
+    </div>
+
+    <script src="chooseLocation.js"></script>
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+  </body>
+</html>
