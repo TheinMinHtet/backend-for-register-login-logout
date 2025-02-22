@@ -4,23 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="reg.css">
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    <link href="../output.css" rel="stylesheet">
+   
 </head>
 <body>
     <div class="container">
         <form id="register-card" class="register-card" action="/">
-            <h1>Welcome</h1>
+            <h1>Set Password</h1>
             <div class="input-group">
                 <input id="password" name="password" type="password" placeholder="Create password">
             </div>
             <div class="input-group">
                 <input id="password2" name="password2" type="password" placeholder="Confirm password">
             </div>
-            <button class="submit-btn" onclick="nextPage()">Submit</button>
+            <button class="submit-btn" onclick="nextPage()">Next</button>
+            <div style="margin-top: 20px" class="flex flex-row gap-1 hover:cursor-pointer items-center self-start "><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg><h class="text-xl leading-normal font-bold underline" onclick="goBack()">Back</h></h></div>
+           
         </form>
+
     </div>
+    <script>
+        const notyf = new Notyf();
+    
+        function nextPage(event) {
+            event.preventDefault(); // Prevent form submission
+    
+            const password = document.getElementById("password").value;
+            const password2 = document.getElementById("password2").value;
+    
+            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+            if (!strongPasswordRegex.test(password)) {
+                notyf.error("Password must be at least 8 characters with uppercase, lowercase, number & special character!");
+                return;
+            }
+    
+            if (password !== password2) {
+                notyf.error("Passwords do not match!");
+                return;
+            }
+    
+            // Store password in localStorage (For demo purposes. Avoid storing passwords like this in production!)
+            localStorage.setItem("password", password);
+    
+            notyf.success("Password set successfully!");
+    
+            setTimeout(() => {
+                window.location.href = "./userCredentials.html"; // Change this to your next page
+            }, 1500);
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+    
+        // Attach event listener to form submit button
+        document.querySelector(".submit-btn").addEventListener("click", nextPage);
+    </script>
 </body>
 </html>

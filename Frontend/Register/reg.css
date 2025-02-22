@@ -34,7 +34,7 @@ body {
     flex-direction: column;
     align-items: center;
     padding: 40px;
-    width: 400px;
+    width: 470px;
     background: #F1F5F9;
     box-shadow: 8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF;
     border-radius: 24px;
@@ -73,8 +73,8 @@ body {
 }
 
 .otp {
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
     padding: 12px;
     border: none;
     background: #FFFFFF;
@@ -85,6 +85,16 @@ body {
     text-align: center;
 }
 
+.otpResend {
+    padding-top: 20px;
+    text-decoration: underline;
+    font-weight: bold;
+
+}
+
+.otpResend:hover {
+    cursor: pointer;
+}
 #resend-otp {
     padding-top: 30px;
     text-align: center;

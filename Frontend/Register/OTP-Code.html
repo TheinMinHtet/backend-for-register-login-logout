@@ -3,37 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="reg.css">
+    <link rel="stylesheet" href="./reg.css">
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
     <title>OTP Code</title>
 </head>
 <body>
     <div class="container">
-        <form id="register-card" class="register-card" action="/">
+        <form id="register-card" class="register-card">
             <h1>Verify OTP</h1>
             <div class="otp-form">
-                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(1)' maxlength=1 >
-                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(2)' maxlength=1 >
-                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(3)' maxlength=1 >
-                <input class="otp" type="text" oninput='digitValidate(this)'onkeyup='tabChange(4)' maxlength=1 >
-                <button class="submit-btn">Verify OTP</button>
-                <a href="#" style="text-decoration: none; color: black;"><p id="resend-otp">Resend OTP?</p></a>
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(1)' maxlength=1>
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(2)' maxlength=1>
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(3)' maxlength=1>
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(4)' maxlength=1>
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(5)' maxlength=1>
+                <input class="otp" type="text" oninput='digitValidate(this)' onkeyup='tabChange(6)' maxlength=1>
+                <button class="submit-btn" type="button" onclick="verifyOTP()">Verify OTP</button>
+                <p class="otpResend" onclick="resendOTP()">Verify OTP</p>
             </div>
         </form>
     </div>
+
     <script>
-        let digitValidate = function(ele){
-            console.log(ele.value);
-            ele.value = ele.value.replace(/[^0-9]/g,'');
-          }
-          
-          let tabChange = function(val){
-              let ele = document.querySelectorAll('input');
-              if(ele[val-1].value != ''){
-                ele[val].focus()
-              }else if(ele[val-1].value == ''){
-                ele[val-2].focus()
-              }   
-           }
+        const notyf = new Notyf();
+        function digitValidate(ele) {
+            ele.value = ele.value.replace(/[^0-9]/g, '');
+        }
+
+        function tabChange(val) {
+            let ele = document.querySelectorAll('.otp');
+            if (ele[val - 1].value !== '' && val < ele.length) {
+                ele[val].focus();
+            } else if (ele[val - 1].value === '' && val > 1) {
+                ele[val - 2].focus();
+            }
+        }
+
+        function verifyOTP() {
+            const email = localStorage.getItem("email") || "";
+            if (!email) {
+                notyf.error("Email not found in localStorage!");
+                return;
+            }
+
+            // Get OTP input
+            const otpInputs = document.querySelectorAll('.otp');
+            let otp = "";
+            otpInputs.forEach(input => otp += input.value);
+
+           
+
+            const requestData = {
+                register: true,
+                email: email,
+                otp: otp
+            };
+
+            fetch("http://localhost/skillSwap/skill-swap/register.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("API Response:", data);
+                if (data.success) {
+                    notyf.success("OTP verified successfully!");
+                    loginUser(email);
+                } else {
+                    notyf.error(data.message || "OTP verification failed!");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                notyf.error("An error occurred while verifying OTP.");
+            });
+        }
+
+        function loginUser(email) {
+    const loginData = {
+        username: email,
+        password: localStorage.getItem("password"),
+        login: true
+    };
+
+    fetch("http://localhost/skillSwap/skill-swap/login_and_logout.php", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(loginData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Login Response:", data);
+        if (data.status === "success") {
+            notyf.success(data.message);
+            localStorage.setItem("JWT",data.token);
+
+            
+            window.location.href = "/dashboard.html"; // Redirect to dashboard or home
+        } else {
+            notyf.error(data.message || "Login failed!");
+            alert(localStorage.getItem("password"))
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        notyf.error("An error occurred while logging in.");
+    });
+
+}
+
+
+
+    function resendOTP() {
+        const email = localStorage.getItem("email") || "";
+        if (!email) {
+            notyf.error("Email not found in localStorage!");
+            return;
+        }
+
+        const requestData = {
+            resend_otp: true,
+            email: email
+        };
+
+        fetch("http://localhost/skillSwap/skill-swap/register.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Resend OTP Response:", data);
+            if (data.success) {
+                notyf.success("OTP resent successfully!");
+            } else {
+                notyf.error(data.message || "Failed to resend OTP!");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            notyf.error("An error occurred while resending OTP.");
+        });
+    }
     </script>
 </body>
 </html>
