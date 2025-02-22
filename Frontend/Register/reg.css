@@ -1,0 +1,164 @@
+:root {
+	--success-color: #2ecc71;
+	--error-color: #e74c3c;
+}
+
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Background Styling */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: url('cool-background.png') no-repeat center center;
+    background-size: cover;
+}
+
+/* Container */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+/* Register Card */
+#register-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+    width: 470px;
+    background: #F1F5F9;
+    box-shadow: 8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF;
+    border-radius: 24px;
+    text-align: center;
+}
+
+/* Welcome Text */
+#register-card h1 {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 36px;
+    color: #2F2F2F;
+    margin-bottom: 20px;
+}
+
+/* Input Fields */
+.input-group {
+    width: 100%;
+    margin: 10px 0;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: #FFFFFF;
+    box-shadow: inset -3px -3px 7px #FFFFFF, inset 3px 3px 7px rgba(156, 156, 156, 0.48);
+    border-radius: 20px;
+    font-size: 16px;
+    color: #2F2F2F;
+    text-align: center;
+}
+
+.input-group input:focus {
+	outline: 0;
+	border-color: #777;
+}
+
+.otp {
+    width: 60px;
+    height: 60px;
+    padding: 12px;
+    border: none;
+    background: #FFFFFF;
+    box-shadow: inset -3px -3px 7px #FFFFFF, inset 3px 3px 7px rgba(156, 156, 156, 0.48);
+    border-radius: 20px;
+    font-size: 16px;
+    color: #2F2F2F;
+    text-align: center;
+}
+
+.otpResend {
+    padding-top: 20px;
+    text-decoration: underline;
+    font-weight: bold;
+
+}
+
+.otpResend:hover {
+    cursor: pointer;
+}
+#resend-otp {
+    padding-top: 30px;
+    text-align: center;
+}
+
+/* Submit Button */
+.submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: #B5D7F5;
+    box-shadow: 8px 8px 8px #99CFFF, -8px -8px 8px #C6E4FF;
+    border: none;
+    border-radius: 32px;
+    font-size: 24px;
+    color: #2F2F2F;
+    cursor: pointer;
+    margin-top: 42px;
+}
+
+.submit-btn:hover {
+    background: #99CFFF;
+}
+
+/* Social Login */
+.social-login {
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
+    display: flex
+;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 50px;
+}
+
+.social-login p {
+    font-size: 18px;
+    color: #24272C;
+    margin-top: 10px;
+}
+
+.social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+/* Social Icons */
+.google-icon {
+    width: 50px;
+    height: 50px;
+    background: #F1F5F9;
+    box-shadow: 8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.google-icon::before {
+    content: url('google-icon.png'); /* Replace with actual Google logo */
+    width: 20px;
+    height: 20px;
+}
+

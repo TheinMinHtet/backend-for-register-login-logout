@@ -1,5 +1,8 @@
 <?php
 header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *"); // Allow all origins
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS"); // Allow these HTTP methods
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -9,7 +12,8 @@ require 'database_connection.php';
 
 define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
 
-function generateJWT($user_id, $username, $email) {
+function generateJWT($user_id, $username, $email)
+{
     $payload = [
         'user_id' => $user_id,
         'username' => $username,
@@ -17,11 +21,12 @@ function generateJWT($user_id, $username, $email) {
         'iat' => time(),
         'exp' => time() + 86400
     ];
-    
+
     return JWT::encode($payload, JWT_SECRET, 'HS256');
 }
 
-function verifyJWT($token) {
+function verifyJWT($token)
+{
     try {
         return JWT::decode($token, new Key(JWT_SECRET, 'HS256'));
     } catch (Exception $e) {
@@ -33,7 +38,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'POST') {
     $input = json_decode(file_get_contents("php://input"), true);
-    
+
     if (isset($input['login'])) {
         // Input validation
         if (empty($input['username']) || empty($input['password'])) {
@@ -76,4 +81,3 @@ if ($method === 'POST') {
         ]);
     }
 }
-?>

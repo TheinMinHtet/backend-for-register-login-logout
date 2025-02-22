@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="reg.css">
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+</head>
+<body>
+    <div class="container">
+        <form id="register-card" class="register-card">
+            <h1>Welcome</h1>
+            <div class="input-group">
+                <input id="username" name="username" type="text" placeholder="User name">
+            </div>
+            <div class="input-group">
+                <input id="email" name="email" type="text" placeholder="Email">
+            </div>
+            <button type="submit" class="submit-btn">Next</button>
+            <div class="social-login">
+                <p>Or Signup Using</p>
+                <div class="social-icons">
+                    <div class="google-icon"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const notyf = new Notyf();
+
+            document.getElementById("register-card").addEventListener("submit", function(event) {
+                event.preventDefault();
+
+                const username = document.getElementById("username").value.trim();
+                const email = document.getElementById("email").value.trim();
+
+                // Email validation regex
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (!username) {
+                    notyf.error("Username is required!");
+                    return;
+                }
+
+                if (!email) {
+                    notyf.error("Email is required!");
+                    return;
+                }
+
+                if (!emailPattern.test(email)) {
+                    notyf.error("Invalid email format!");
+                    return;
+                }
+
+                // If validation passes, store in localStorage
+                localStorage.setItem("username", username);
+                localStorage.setItem("email", email);
+
+                notyf.success("Registration successful!");
+                setTimeout(() => {
+                    window.location.href = "./registrationPwd.html"; // Change this to your desired file
+                }, 1500); 
+            });
+        });
+    </script>
+</body>
+</html>
