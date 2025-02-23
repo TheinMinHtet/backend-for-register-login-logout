@@ -7,13 +7,12 @@ use Firebase\JWT\Key;
 require 'vendor/autoload.php';
 require "database_connection.php";
 
-define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'); // Use a proper secret key
+define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'); // Use a secure key
 
 function getTokenFromHeader() {
     $headers = apache_request_headers();
     if (isset($headers['Authorization'])) {
-        $authHeader = $headers['Authorization'];
-        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        if (preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
             return $matches[1];
         }
     }
@@ -28,27 +27,22 @@ function verifyJWT($token) {
     }
 }
 
-// Get token from request
+// Get & verify token
 $token = getTokenFromHeader();
-
-// If no token, return error and stop execution
 if (!$token) {
     echo json_encode(["status" => "error", "message" => "Token missing"]);
     exit();
 }
 
-// Verify the token
 $decoded = verifyJWT($token);
 if (!$decoded) {
     echo json_encode(["status" => "error", "message" => "Invalid token"]);
     exit();
 }
 
-// If the token is valid, proceed with fetching user ID
-$user_id = $decoded->user_id;
+$user_id = $decoded->user_id; // Get user_id from token
 
-// Handle file upload for profile image
-$profile_image = null;
+// Handle profile image update separately
 if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
     $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
     $fileExtension = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
@@ -63,42 +57,89 @@ if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPL
         mkdir($uploadDir, 0777, true);
     }
 
-    // Set profile image path
     $profile_image = $uploadDir . "user_" . $user_id . "." . $fileExtension;
     move_uploaded_file($_FILES['profile_image']['tmp_name'], $profile_image);
+
+    // Update only the profile image
+    $updateImageQuery = "UPDATE user SET profile_img = ? WHERE user_id = ?";
+    $stmt = $conn->prepare($updateImageQuery);
+    $stmt->bind_param("si", $profile_image, $user_id);
+    
+    if ($stmt->execute()) {
+        echo json_encode(["status" => "success", "message" => "Profile image updated successfully"]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Failed to update profile image"]);
+    }
+    $stmt->close();
 }
 
-// Update user profile (excluding telegram_username and telegram_phone)
-$city = $_POST['city'] ?? null;
-$region = $_POST['region'] ?? null;
-$country = $_POST['country'] ?? null;
-$bio = $_POST['bio'] ?? null;
-$status = $_POST['status'] ?? null;
+$city = isset($_POST['city']) ? trim($_POST['city']) : null;
+$region = isset($_POST['region']) ? trim($_POST['region']) : null;
+$country = isset($_POST['country']) ? trim($_POST['country']) : null;
+$bio = isset($_POST['bio']) ? trim($_POST['bio']) : null;
+$status = isset($_POST['status']) ? trim($_POST['status']) : null;
 
-// If any details are provided, update the user table
-if ($city || $region || $country || $bio || $status || $profile_image) {
-    $updateQuery = "UPDATE user SET 
-        city = IFNULL(?, city), 
-        region = IFNULL(?, region), 
-        country = IFNULL(?, country), 
-        bio = IFNULL(?, bio), 
-        status = IFNULL(?, status),
-        profile_img = IFNULL(?, profile_img)
-        WHERE user_id = ?";
+// Fetch current profile data
+$currentQuery = "SELECT city, region, country, bio, status FROM user WHERE user_id = ?";
+$stmt = $conn->prepare($currentQuery);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$currentData = $result->fetch_assoc();
+$stmt->close();
+
+// Check if at least one value is different
+$updates = [];
+$params = [];
+$types = "";
+
+if (isset($city) && $city !== $currentData["city"]) {
+    $updates[] = "city = ?";
+    $params[] = $city;
+    $types .= "s";
+}
+if (isset($region) && $region !== $currentData["region"]) {
+    $updates[] = "region = ?";
+    $params[] = $region;
+    $types .= "s";
+}
+if (isset($country) && $country !== $currentData["country"]) {
+    $updates[] = "country = ?";
+    $params[] = $country;
+    $types .= "s";
+}
+if (isset($bio) && $bio !== $currentData["bio"]) {
+    $updates[] = "bio = ?";
+    $params[] = $bio;
+    $types .= "s";
+}
+if (isset($status) && $status !== $currentData["status"]) {
+    $updates[] = "status = ?";
+    $params[] = $status;
+    $types .= "s";
+}
+
+// Debugging: Check if changes are detected
+if (empty($updates)) {
+    echo json_encode(["status" => "no_change", "message" => "No changes detected"]);
+} else {
+    // Execute update query
+    $updateQuery = "UPDATE user SET " . implode(", ", $updates) . " WHERE user_id = ?";
+    $params[] = $user_id;
+    $types .= "i";
 
     $stmt = $conn->prepare($updateQuery);
-    $stmt->bind_param("ssssssi", $city, $region, $country, $bio, $status, $profile_image, $user_id);
+    $stmt->bind_param($types, ...$params);
 
     if ($stmt->execute()) {
         echo json_encode(["status" => "success", "message" => "Profile updated successfully"]);
     } else {
-        echo json_encode(["status" => "error", "message" => "Failed to update profile"]);
+        echo json_encode(["status" => "error", "message" => "Failed to update profile", "error" => $stmt->error]);
     }
     $stmt->close();
-} else {
-    echo json_encode(["status" => "error", "message" => "No data to update"]);
 }
 
+// Fetch updated user profile
 $userQuery = "
     SELECT 
         u.user_id, u.username, u.email, u.password, u.otp, u.otp_expiry, 
@@ -108,13 +149,13 @@ $userQuery = "
         s.img_name AS skill_img, s.description AS skill_description
     FROM user u
     LEFT JOIN memory m ON u.user_id = m.user_id
-    LEFT JOIN skill s ON u.user_id = s.user_id  -- Assuming skill table links directly to user_id
+    LEFT JOIN skill s ON u.user_id = s.user_id
     WHERE u.user_id = ? 
     ORDER BY u.user_id
 ";
 
 $stmt = $conn->prepare($userQuery);
-$stmt->bind_param("i", $user_id); // Bind user_id parameter
+$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -122,7 +163,6 @@ $users = [];
 while ($row = $result->fetch_assoc()) {
     $userId = $row['user_id'];
 
-    // Initialize user data if not already set
     if (!isset($users[$userId])) {
         $users[$userId] = [
             "user_id" => $row["user_id"],
