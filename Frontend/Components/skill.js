@@ -18,6 +18,8 @@ class Skill extends HTMLElement {
         const title = this.getAttribute("title") || "";
         const color = this.getAttribute("color") || "#F1F5F9";
         const border = this.getAttribute("border") || "8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF";
+        const days = this.getAttribute("days") || "";
+        const taught_count= this.getAttribute("taught_count") || "";
 
         //`Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut eu mollis tortor, sed posuere elit. Pellentesque sed imperdiet arcu, non interdum libero. Mauris non mi id enim volutpat efficitur. Donec quis eros at nunc maximus tristique. Nunc pretium risus magna, et vehicula leo tincidunt nec. Mauris mollis vehicula ante ac sollicitudin. Nullam non justo at purus accumsan aliquam.
 
@@ -60,7 +62,12 @@ class Skill extends HTMLElement {
             </div>
             
             <div class="py-2 flex flex-row gap-2 w-full">${groupedTextHTML}</div>
-            <p class="font-normal text-lg leading-[23px] opacity-20 text-right w-full -mt-4">20 days</p>
+            <div class="flex flex-row justify-between items-center w-full">
+                <p class="font-normal text-lg leading-[23px] opacity-20 -mt-4">${days} days</p>
+            <p class="font-normal text-lg leading-[23px]  -mt-4"><span class="opacity-20">taught count: </span><span class="font-bold">${taught_count}</span> </p>
+            
+            </div>
+            
         </div>`;
     }
 }

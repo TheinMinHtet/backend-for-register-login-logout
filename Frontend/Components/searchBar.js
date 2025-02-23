@@ -169,7 +169,7 @@ class SearchBar extends HTMLElement {
       <button
         data-id="${category.id}"
         class="px-3 py-1 text-sm rounded-full flex items-center gap-1 text-[#2F2F2F] hover:cursor-pointer transition-all duration-300 ease-in-out hover:shadow-sm transform hover:scale-105"
-        style="opacity: 0; transform: scale(0.95); background-color: ${category.color};"
+        style="opacity: 0; transform: scale(0.95); background-color: ${category.color};min-width: 50px"
       >
         ${category.name}
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 hover:text-red-500 remove-category transition-colors duration-200">
@@ -196,7 +196,7 @@ class SearchBar extends HTMLElement {
       <button
         data-id="${category.id}"
         class="px-3 py-1 text-sm rounded-full transition-all duration-300 ease-in-out text-[#2F2F2F] transform hover:scale-105 hover:shadow-sm hover:cursor-pointer"
-        style="opacity: 0; transform: scale(0.95); background-color: ${category.color};"
+        style="opacity: 0; transform: scale(0.95); background-color: ${category.color};min-width: 50px"
       >   
         ${category.name}
       </button>

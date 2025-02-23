@@ -1,3 +1,4 @@
+
 class SkillTaught extends HTMLElement {
     static get observedAttributes() {
         return ["number"];

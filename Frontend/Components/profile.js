@@ -1,32 +1,34 @@
-class profile extends HTMLElement {
+class Profile extends HTMLElement {
     constructor() {
         super();
         this.isActive = false;
         this.borderElement = null;
         const size = this.getAttribute("size") || "";
         const clickable = this.getAttribute("clickable") || "yes";
+        const imgSrc = this.getAttribute("img-src"); // Get the img-src attribute
+
+        // Handle null or undefined img-src
+        const img = imgSrc ? "../../" + imgSrc : "../image/profile.jfif"; 
+        console.log("Image path:", img); // Debugging
+
         this.innerHTML = `
-        <div class="relative" >
-            <div style="width: ${size}; height: ${size}" class="box-border  bg-[url('./image/profile.jfif')] border-4 border-[#F1F5F9] shadow-[0px_4px_4px_rgba(0,_0,_0,_0.25),_0px_4px_4px_#C4D3E0,_5px_-3px_4px_#C4D3E0] rounded-full bg-cover bg-center ${(clickable !== "no") ? "cursor-pointer" : "" } hover:shadow-[0px_6px_10px_rgba(0,_0,_0,_0.25),_0px_6px_8px_#C4D3E0,_8px_-4px_6px_#C4D3E0] 
-    transition-all  duration-300">
+        <div class="relative">
+            <div style="width: ${size}; height: ${size}; background: url(${img});background-size: contain;" class="box-border bg-[url(${img})] border-4 border-[#F1F5F9] shadow-[0px_4px_4px_rgba(0,_0,_0,_0.25),_0px_4px_4px_#C4D3E0,_5px_-3px_4px_#C4D3E0] rounded-full bg-cover bg-center ${(clickable !== "no") ? "cursor-pointer" : "" } hover:shadow-[0px_6px_10px_rgba(0,_0,_0,_0.25),_0px_6px_8px_#C4D3E0,_8px_-4px_6px_#C4D3E0] transition-all duration-300">
             </div>
         </div>
         `;
 
-        if(clickable !== "no") {
+        if (clickable !== "no") {
             this.addEventListener('click', this.toggleBorder);
-        
-        // Add document click listener to handle clicks outside
-        document.addEventListener('click', (event) => {
-            // Check if click is outside of the component and menu is open
-            if (this.isActive && !this.contains(event.target)) {
-                this.closeMenu();
-            }
-        });
 
+            // Add document click listener to handle clicks outside
+            document.addEventListener('click', (event) => {
+                // Check if click is outside of the component and menu is open
+                if (this.isActive && !this.contains(event.target)) {
+                    this.closeMenu();
+                }
+            });
         }
-           
-        
     }
 
     closeMenu() {
@@ -39,14 +41,12 @@ class profile extends HTMLElement {
                 this.borderElement = null;
             }, 300);
         }
-        
     }
-
 
     toggleBorder(event) {
         // Prevent the click event from bubbling up to document
         event.stopPropagation();
-        
+
         if (!this.isActive) {
             this.borderElement = document.createElement('div');
             this.borderElement.className = 'absolute -bottom-2 left-1/2 -translate-x-1/2 border-2 border-[#f1f5f9] rounded-xl opacity-0 transition-all duration-300 w-[100px] py-3 bg-[#F1F5F9]';
@@ -56,7 +56,7 @@ class profile extends HTMLElement {
             <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1 ">Log out</p>
             `;
             this.querySelector('.relative').appendChild(this.borderElement);
-            
+
             requestAnimationFrame(() => {
                 if (this.borderElement) {
                     this.borderElement.style.opacity = '1';
@@ -71,4 +71,4 @@ class profile extends HTMLElement {
     }
 }
 
-customElements.define("pro-file", profile);
+customElements.define("pro-file", Profile);
