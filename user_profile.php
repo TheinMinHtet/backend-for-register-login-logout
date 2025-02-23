@@ -58,7 +58,7 @@ if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPL
         exit();
     }
 
-    $uploadDir = "uploads/";
+    $uploadDir = "uploads/memory/";
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }
