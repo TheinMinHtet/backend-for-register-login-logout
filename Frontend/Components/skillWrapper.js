@@ -1,13 +1,7 @@
 class SkillWrapper extends HTMLElement {
     constructor() {
         super();
-        this.originalSkills = [
-            { title: "Guitar", description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut eu mollis tortor, sed posuere elit. Pellentesque sed imperdiet arcu, non interdum libero. Mauris non mi id enim volutpat efficitur. Donec quis eros at nunc maximus tristique. Nunc pretium risus magna, et vehicula leo tincidunt nec. Mauris mollis vehicula ante ac sollicitudin. Nullam non justo at purus accumsan aliquam.", tags: [{ text: "boy" }, { text: "girl" }] },
-            { title: "Piano", description: "Mastering the piano notes.", tags: [{ text: "music" }, { text: "classic" }] },
-            { title: "Coding", description: "Building amazing projects.", tags: [{ text: "developer" }, { text: "tech" }] },
-            { title: "Photography", description: "Capturing the beauty of life.", tags: [{ text: "lens" }, { text: "nature" }] },
-            { title: "Dancing", description: "Expressing with movement.", tags: [{ text: "hiphop" }, { text: "freestyle" }] }
-        ];
+        this.originalSkills = JSON.parse(localStorage.getItem("skillsData"));
         this.skills = [...this.originalSkills];
         
         // Bind methods
@@ -28,10 +22,10 @@ class SkillWrapper extends HTMLElement {
         
         switch(sortValue) {
             case 'title-asc':
-                this.skills.sort((a, b) => a.title.localeCompare(b.title));
+                this.skills.sort((a, b) => a.name.localeCompare(b.title));
                 break;
             case 'title-desc':
-                this.skills.sort((a, b) => b.title.localeCompare(a.title));
+                this.skills.sort((a, b) => b.name.localeCompare(a.title));
                 break;
             case 'tags-asc':
                 this.skills.sort((a, b) => a.tags.length - b.tags.length);
@@ -58,7 +52,7 @@ class SkillWrapper extends HTMLElement {
                     <div class="flex gap-[150px] flex-wrap justify-center px-14">
                         ${this.skills.map(skill => `
                             <sk-ill 
-                                title="${skill.title}" 
+                                title="${skill.name}" 
                                 description="${skill.description}" 
                                 tags='${JSON.stringify(skill.tags)}'>
                             </sk-ill>

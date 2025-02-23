@@ -16,7 +16,7 @@ class Skill extends HTMLElement {
 
         const description = this.getAttribute("description") || "";
         const title = this.getAttribute("title") || "";
-        const color = this.getAttribute("color") || "#2F2F2F";
+        const color = this.getAttribute("color") || "#F1F5F9";
         const border = this.getAttribute("border") || "8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF";
 
         //`Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut eu mollis tortor, sed posuere elit. Pellentesque sed imperdiet arcu, non interdum libero. Mauris non mi id enim volutpat efficitur. Donec quis eros at nunc maximus tristique. Nunc pretium risus magna, et vehicula leo tincidunt nec. Mauris mollis vehicula ante ac sollicitudin. Nullam non justo at purus accumsan aliquam.
@@ -27,7 +27,7 @@ class Skill extends HTMLElement {
         for (let i = 0; i < tags.length; i++) {
             groupedTextHTML += `
                 
-                    <p style="background-color: ${this.getRandomColor()};" class="font-normal text-xl leading-[23px] px-[10px] py-[6px] min-w-[74px]  text-center rounded-[28px]">${tags[i].text}</p>
+                    <p style="background-color: ${this.getRandomColor()};" class="font-normal text-xl leading-[23px] px-[10px] py-[6px] min-w-[74px]  text-center rounded-[28px]">${tags[i].tag}</p>
                 
                 
             `;
