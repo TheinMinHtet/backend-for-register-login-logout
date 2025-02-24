@@ -54,7 +54,9 @@ class SkillWrapper extends HTMLElement {
                             <sk-ill 
                                 title="${skill.name}" 
                                 description="${skill.description}" 
-                                tags='${JSON.stringify(skill.tags)}'>
+                                tags='${JSON.stringify(skill.tags)}'
+                                days="${skill.days}"
+                                taught_count=${skill.taught_count}>
                             </sk-ill>
                         `).join("")}
                     </div>

@@ -10,40 +10,70 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : "";
 $tags = isset($_GET['tag']) ? explode(" ", trim($_GET['tag'])) : [];
 
-// Base SQL query
-$query = "
-    SELECT 
-        skill.skill_id, skill.name AS skill_name, skill.description AS skill_description,
-        user.user_id, user.username, user.email,
-        tag.tag_id, tag.tag
+// Step 1: Find skill IDs that match the search criteria
+$skillIdQuery = "
+    SELECT DISTINCT skill.skill_id
     FROM skill
-    LEFT JOIN user ON skill.user_id = user.user_id
     LEFT JOIN tag ON skill.skill_id = tag.skill_id
     WHERE 1
 ";
 
-// Add filtering conditions
 $params = [];
 if (!empty($keyword)) {
-    $query .= " AND skill.name LIKE ?";
+    $skillIdQuery .= " AND skill.name LIKE ?";
     $params[] = "%$keyword%";
 }
 
 if (!empty($tags)) {
-    $query .= " AND (";
+    $skillIdQuery .= " AND (";
     $tagConditions = [];
     foreach ($tags as $tag) {
         $tagConditions[] = "tag.tag LIKE ?";
         $params[] = "%$tag%";
     }
-    $query .= implode(" OR ", $tagConditions) . ")";
+    $skillIdQuery .= implode(" OR ", $tagConditions) . ")";
 }
 
-// Prepare and execute the query
-$stmt = $conn->prepare($query);
+// Execute the skill ID query
+$stmt = $conn->prepare($skillIdQuery);
 if (!empty($params)) {
     $stmt->bind_param(str_repeat("s", count($params)), ...$params);
 }
+$stmt->execute();
+$skillIdResult = $stmt->get_result();
+
+// Collect matching skill IDs
+$matchingSkillIds = [];
+if ($skillIdResult->num_rows > 0) {
+    while ($row = $skillIdResult->fetch_assoc()) {
+        $matchingSkillIds[] = $row['skill_id'];
+    }
+}
+
+// If no matching skills, return empty response
+if (empty($matchingSkillIds)) {
+    echo json_encode([]);
+    $conn->close();
+    exit;
+}
+
+// Step 2: Fetch all data for the matching skills (including all tags)
+$query = "
+    SELECT 
+        skill.skill_id, skill.name AS skill_name, skill.description AS skill_description,
+        skill.hours,
+        skill.taught_count,
+        user.user_id, user.username, user.email,user.profile_img,
+        tag.tag_id, tag.tag
+    FROM skill
+    LEFT JOIN user ON skill.user_id = user.user_id
+    LEFT JOIN tag ON skill.skill_id = tag.skill_id
+    WHERE skill.skill_id IN (" . implode(",", array_fill(0, count($matchingSkillIds), "?")) . ")
+";
+
+// Prepare and execute the query
+$stmt = $conn->prepare($query);
+$stmt->bind_param(str_repeat("i", count($matchingSkillIds)), ...$matchingSkillIds);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -66,10 +96,13 @@ if ($result->num_rows > 0) {
                 "skill_id" => $skillId,
                 "name" => $row['skill_name'],
                 "description" => $row['skill_description'],
+                "days" => $row['hours'],
+                "taught_count" => $row['taught_count'],
                 "user" => [
                     "user_id" => $row['user_id'],
                     "username" => $row['username'],
-                    "email" => $row['email']
+                    "email" => $row['email'],
+                    "profile" => $row['profile_img']
                 ],
                 "tags" => []
             ];
