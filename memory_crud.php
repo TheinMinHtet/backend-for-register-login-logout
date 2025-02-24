@@ -1,21 +1,26 @@
 <?php
 header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS, DELETE");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-
 require 'vendor/autoload.php';
 require "database_connection.php";
-
 define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
 
 function getTokenFromHeader() {
-    $headers = apache_request_headers();
-    if (isset($headers['Authorization'])) {
-        $authHeader = $headers['Authorization'];
-        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-            return $matches[1];
+    $headers = getallheaders();
+    foreach ($headers as $key => $value) {
+        if (strtolower($key) === 'authorization') {
+            return str_replace('Bearer ', '', $value);
         }
+    }
+    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        return str_replace('Bearer ', '', $_SERVER['HTTP_AUTHORIZATION']);
+    } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        return str_replace('Bearer ', '', $_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
     }
     return null;
 }
@@ -28,126 +33,131 @@ function verifyJWT($token) {
     }
 }
 
+// Get & verify token
 $token = getTokenFromHeader();
-if ($token) {
-    $decoded = verifyJWT($token);
-
-    if ($decoded) {
-        $user_id = $decoded->user_id;
-
-        // Get skill_id for the user
-        $skill_id = null;
-        $skillQuery = "SELECT skill_id FROM skill WHERE user_id = ? LIMIT 1";
-        $stmt = $conn->prepare($skillQuery);
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $stmt->bind_result($skill_id);
-        $stmt->fetch();
-        $stmt->close();
-
-        $imagePath = null;
-        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-            $fileExtension = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-
-            if (!in_array($fileExtension, $allowedExtensions)) {
-                echo json_encode(["status" => "error", "message" => "Invalid image format"]);
-                exit();
-            }
-
-            $uploadDir = "uploads/memory/";
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-
-            $imagePath = $uploadDir . "memory_" . $user_id . "_" . time() . "." . $fileExtension;
-            move_uploaded_file($_FILES['image']['tmp_name'], $imagePath);
-        }
-        
-        $description = $_POST['description'] ?? null;
-
-        if ($imagePath && $description) {
-            // Insert memory
-            $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
-            $stmt = $conn->prepare($memoryQuery);
-            $stmt->bind_param("iiss", $user_id, $skill_id, $imagePath, $description);
-
-            if ($stmt->execute()) {
-                // Success: Increase learnt_count and taught_count
-                $stmt->close();
-
-                // Check if log entry exists for this user
-                $logCheckQuery = "SELECT log_id FROM log WHERE user_id = ?";
-                $stmt = $conn->prepare($logCheckQuery);
-                $stmt->bind_param("i", $user_id);
-                $stmt->execute();
-                $stmt->store_result();
-                $logExists = $stmt->num_rows > 0;
-                $stmt->close();
-
-                if ($logExists) {
-                    $updateLogQuery = "UPDATE log SET learnt_count = learnt_count + 1 WHERE user_id = ?";
-                    $stmt = $conn->prepare($updateLogQuery);
-                    $stmt->bind_param("i", $user_id);
-                    $stmt->execute();
-                    $stmt->close();
-                } else {
-                    $insertLogQuery = "INSERT INTO log (user_id, learnt_count) VALUES (?,  1)";
-                    $stmt = $conn->prepare($insertLogQuery);
-                    $stmt->bind_param("i", $user_id);
-                    $stmt->execute();
-                    $stmt->close();
-                }
-
-                $updatePointsQuery = "UPDATE user SET points = points + 10 WHERE user_id = ?";
-                $stmt = $conn->prepare($updatePointsQuery);
-                $stmt->bind_param("i", $user_id);
-                $stmt->execute();
-                $stmt->close();
-
-                echo json_encode(["status" => "success", "message" => "Image and description added successfully, log updated"]);
-            } else {
-                echo json_encode(["status" => "error", "message" => "Failed to insert memory"]);
-            }
-
-        } else {
-            echo json_encode(["status" => "error", "message" => "Missing image or description"]);
-        }
-
-    } else {
-        echo json_encode(["status" => "error", "message" => "Invalid token"]);
-    }
-
-} else {
+if (!$token) {
     echo json_encode(["status" => "error", "message" => "Token missing"]);
+    exit();
 }
+$decoded = verifyJWT($token);
+if (!$decoded) {
+    echo json_encode(["status" => "error", "message" => "Invalid token"]);
+    exit();
+}
+$user_id = $decoded->user_id;
 
-// Fetch all memory records
-$memoryQuery = "SELECT * FROM memory";
-$memoryResult = $conn->query($memoryQuery);
+// Handle DELETE Request for Memory Deletion
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    $memory_id = isset($_GET['memory_id']) ? intval($_GET['memory_id']) : null;
 
-$memory = [];
-if ($memoryResult->num_rows > 0) {
-    while ($row = $memoryResult->fetch_assoc()) {
-        $memory[] = $row;
+    if (!$memory_id) {
+        echo json_encode(["status" => "error", "message" => "Memory ID is required"]);
+        exit();
     }
-}
 
-// Fetch all user records
-$userQuery = "SELECT * FROM user";
-$userResult = $conn->query($userQuery);
+    // Check if the memory belongs to the user
+    $checkMemoryQuery = "SELECT COUNT(*) FROM memory WHERE memory_id = ? AND user_id = ?";
+    $stmt = $conn->prepare($checkMemoryQuery);
+    $stmt->bind_param("ii", $memory_id, $user_id);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $stmt->close();
 
-$user = [];
-if ($userResult->num_rows > 0) {
-    while ($row = $userResult->fetch_assoc()) {
-        $user[] = $row;
+    if ($count === 0) {
+        echo json_encode(["status" => "error", "message" => "You are not authorized to delete this memory"]);
+        exit();
     }
+
+    // Delete the memory
+    $deleteMemoryQuery = "DELETE FROM memory WHERE memory_id = ?";
+    $stmt = $conn->prepare($deleteMemoryQuery);
+    $stmt->bind_param("i", $memory_id);
+
+    if ($stmt->execute()) {
+        echo json_encode(["status" => "success", "message" => "Memory deleted successfully"]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Failed to delete memory"]);
+    }
+    $stmt->close();
+    exit();
 }
 
-$response = [
-    "memory" => $memory,
-    "user" => $user
-];
+// Handle POST Request for Memory Creation
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $description = $data['description'] ?? null;
+    $image = $data['image'] ?? null; // Assuming image is passed as base64 encoded string
 
-echo json_encode($response, JSON_PRETTY_PRINT);
+    if ($description && $image) {
+        // Decode the base64 image
+        $imageData = base64_decode($image);
+        $imagePath = "uploads/memory/memory_" . $user_id . "_" . time() . ".png";
+        file_put_contents($imagePath, $imageData);
+
+        // Insert memory
+        $memoryQuery = "INSERT INTO memory (user_id, img_name, description) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($memoryQuery);
+        $stmt->bind_param("iss", $user_id, $imagePath, $description);
+
+        if ($stmt->execute()) {
+            // Success: Increase learnt_count
+            $updateLogQuery = "UPDATE log SET learnt_count = learnt_count + 1 WHERE user_id = ?";
+            $stmt = $conn->prepare($updateLogQuery);
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $stmt->close();
+
+            echo json_encode(["status" => "success", "message" => "Memory added successfully"]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "Failed to insert memory"]);
+        }
+    } else {
+        echo json_encode(["status" => "error", "message" => "Missing description or image"]);
+    }
+    exit();
+}
+
+// Handle GET Request for Fetching Memories
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $requested_user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : $user_id;
+
+    // Fetch memories based on requested user ID
+    $memoryQuery = "SELECT * FROM memory WHERE user_id = ?";
+    $stmt = $conn->prepare($memoryQuery);
+    $stmt->bind_param("i", $requested_user_id);
+    $stmt->execute();
+    $memoryResult = $stmt->get_result();
+
+    $memory = [];
+    if ($memoryResult->num_rows > 0) {
+        while ($row = $memoryResult->fetch_assoc()) {
+            $memory[] = $row;
+        }
+    }
+
+    // Fetch user details
+    $userQuery = "SELECT * FROM user WHERE user_id = ?";
+    $stmt = $conn->prepare($userQuery);
+    $stmt->bind_param("i", $requested_user_id);
+    $stmt->execute();
+    $userResult = $stmt->get_result();
+
+    $user = [];
+    if ($userResult->num_rows > 0) {
+        while ($row = $userResult->fetch_assoc()) {
+            $user[] = $row;
+        }
+    }
+
+    // Combine all data into a single response
+    $response = [
+        "user" => $user,
+        "memory" => $memory
+    ];
+
+    // Output the combined response as JSON
+    echo json_encode($response, JSON_PRETTY_PRINT);
+    exit();
+}
 ?>
