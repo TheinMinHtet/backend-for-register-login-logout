@@ -48,8 +48,9 @@ $user_id = $decoded->user_id;
 
 // Handle DELETE Request for Skill Deletion
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-    // Get skill_id from query parameters
-    $skill_id = isset($_GET['skill_id']) ? intval($_GET['skill_id']) : null;
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    $skill_id = $data['skill_id'] ?? null;
 
     if (!$skill_id) {
         echo json_encode(["status" => "error", "message" => "Skill ID is required"]);
@@ -125,7 +126,7 @@ if ($skill_id !== null) {
     }
 }
 
-// Handle JSON Data from frontend
+// Handle JSON Data from frontend for POST requests (for adding skills and tags)
 $data = json_decode(file_get_contents('php://input'), true);
 $title = $data['title'] ?? null;
 $description = $data['description'] ?? null;
@@ -135,6 +136,9 @@ $hours = $data['hours'] ?? null;
 $response = [];
 
 if ($title && $description && $tags && $hours) {
+    // Convert the tags array to a JSON string
+    $tags_json = json_encode($tags);  // ["html", "css"] as string
+
     // Insert the skill into the skill table
     $skillQuery = "INSERT INTO skill (user_id, name, description, hours) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($skillQuery);
@@ -144,57 +148,25 @@ if ($title && $description && $tags && $hours) {
         $skill_id = $stmt->insert_id;
         $stmt->close();
 
-        // Update taught count for the skill
-        $updateskillQuery = "UPDATE skill SET taught_count = taught_count + 1 WHERE user_id = ?";
-        $stmt = $conn->prepare($updateskillQuery);
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $stmt->close();
-
-        // Check if log exists for this user
-        $checkLogQuery = "SELECT COUNT(*) FROM log WHERE user_id = ?";
-        $stmt = $conn->prepare($checkLogQuery);
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $stmt->bind_result($count);
-        $stmt->fetch();
-        $stmt->close();
-
-        if ($count > 0) {
-            // Update taught_count
-            $updateLogQuery = "UPDATE log SET taught_count = taught_count + 1 WHERE user_id = ?";
-            $stmt = $conn->prepare($updateLogQuery);
-            $stmt->bind_param("i", $user_id);
-            $stmt->execute();
-            $stmt->close();
-        } else {
-            // Insert new log
-            $insertLogQuery = "INSERT INTO log (user_id, taught_count) VALUES (?, 1)";
-            $stmt = $conn->prepare($insertLogQuery);
-            $stmt->bind_param("i", $user_id);
-            $stmt->execute();
-            $stmt->close();
-        }
-
-        // Insert tags into the tag table
-        $tagJson = json_encode($tags);
-        $tagQuery = "INSERT INTO tag (skill_id, tag) VALUES (?, ?)";
-        $stmt = $conn->prepare($tagQuery);
-        $stmt->bind_param("is", $skill_id, $tagJson);
+        // Insert the tags JSON string into the tag table
+        $insertTagQuery = "INSERT INTO tag (skill_id, tag) VALUES (?, ?)";
+        $stmt = $conn->prepare($insertTagQuery);
+        $stmt->bind_param("is", $skill_id, $tags_json);  // Store the tags array as a JSON string
         $stmt->execute();
         $stmt->close();
 
         $response["status"] = "success";
-        $response["message"] = "Skill and tag added successfully";
+        $response["message"] = "Skill and tags added successfully";
     } else {
         $response["status"] = "error";
         $response["message"] = "Failed to insert skill";
     }
 } else {
     $response["status"] = "error";
-    $response["message"] = "Missing title, description, hour or tag";
+    $response["message"] = "Missing title, description, hours, or tags";
 }
 
+// Fetch skill details
 if ($skill_id !== null) {
     $skillQuery = "SELECT * FROM skill WHERE skill_id = ?";
     $stmt = $conn->prepare($skillQuery);
@@ -205,15 +177,15 @@ if ($skill_id !== null) {
     $stmt->bind_param("i", $requested_user_id);
 }
 
-
 // Execute and check for errors
 if ($stmt->execute()) {
     $skillResult = $stmt->get_result();
 } else {
-    echo json_encode(["status" => "error", "message" => "Database error: " . $stmt->error]);
+    $response["status"] = "error";
+    $response["message"] = "Database error: " . $stmt->error;
+    echo json_encode($response);
     exit();
 }
-
 
 $skill = [];
 if ($skillResult->num_rows > 0) {
@@ -222,7 +194,7 @@ if ($skillResult->num_rows > 0) {
     }
 }
 
-// Fetch user details (optional, depends on your requirements)
+// Fetch user details
 $userQuery = "SELECT * FROM user WHERE user_id = ?";
 $stmt = $conn->prepare($userQuery);
 $stmt->bind_param("i", $requested_user_id); // Use the requested user_id
@@ -236,6 +208,7 @@ if ($userResult->num_rows > 0) {
     }
 }
 
+// Fetch tags associated with the skills
 if ($skill_id !== null) {
     $tagQuery = "SELECT * FROM tag WHERE skill_id = ?";
     $stmt = $conn->prepare($tagQuery);
@@ -250,10 +223,11 @@ if ($skill_id !== null) {
 if ($stmt->execute()) {
     $tagResult = $stmt->get_result();
 } else {
-    echo json_encode(["status" => "error", "message" => "Database error: " . $stmt->error]);
+    $response["status"] = "error";
+    $response["message"] = "Database error: " . $stmt->error;
+    echo json_encode($response);
     exit();
 }
-
 
 $tag = [];
 if ($tagResult->num_rows > 0) {
