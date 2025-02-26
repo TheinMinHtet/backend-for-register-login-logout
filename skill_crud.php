@@ -91,7 +91,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     exit();
 }
 
-$requested_user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : $user_id;
+$skill_id = isset($_GET['skill_id']) ? intval($_GET['skill_id']) : null;
+$requested_user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : null;
+
+// If no user_id is provided, default to the authenticated user
+if ($requested_user_id === null) {
+    $requested_user_id = $user_id;
+} else {
+    // Check if user_id exists
+    $checkUserQuery = "SELECT * FROM user WHERE user_id = ?";
+    $stmt = $conn->prepare($checkUserQuery);
+    $stmt->bind_param("i", $requested_user_id);
+    $stmt->execute();
+    $userResult = $stmt->get_result();
+
+    if ($userResult->num_rows === 0) {
+        echo json_encode(["status" => "error", "message" => "Invalid user ID"]);
+        exit();
+    }
+}
+
+// If skill_id is provided, check if it exists
+if ($skill_id !== null) {
+    $checkSkillQuery = "SELECT * FROM skill WHERE skill_id = ?";
+    $stmt = $conn->prepare($checkSkillQuery);
+    $stmt->bind_param("i", $skill_id);
+    $stmt->execute();
+    $skillResult = $stmt->get_result();
+    
+    if ($skillResult->num_rows === 0) {
+        echo json_encode(["status" => "error", "message" => "Invalid skill ID"]);
+        exit();
+    }
+}
 
 // Handle JSON Data from frontend
 $data = json_decode(file_get_contents('php://input'), true);
@@ -163,12 +195,25 @@ if ($title && $description && $tags && $hours) {
     $response["message"] = "Missing title, description, hour or tag";
 }
 
-// Fetch skills based on requested user ID (either from JWT or query parameter)
-$skillQuery = "SELECT * FROM skill WHERE user_id = ?";
-$stmt = $conn->prepare($skillQuery);
-$stmt->bind_param("i", $requested_user_id); // Use the requested user_id
-$stmt->execute();
-$skillResult = $stmt->get_result();
+if ($skill_id !== null) {
+    $skillQuery = "SELECT * FROM skill WHERE skill_id = ?";
+    $stmt = $conn->prepare($skillQuery);
+    $stmt->bind_param("i", $skill_id);
+} else {
+    $skillQuery = "SELECT * FROM skill WHERE user_id = ?";
+    $stmt = $conn->prepare($skillQuery);
+    $stmt->bind_param("i", $requested_user_id);
+}
+
+
+// Execute and check for errors
+if ($stmt->execute()) {
+    $skillResult = $stmt->get_result();
+} else {
+    echo json_encode(["status" => "error", "message" => "Database error: " . $stmt->error]);
+    exit();
+}
+
 
 $skill = [];
 if ($skillResult->num_rows > 0) {
@@ -191,12 +236,24 @@ if ($userResult->num_rows > 0) {
     }
 }
 
-// Fetch tags for skills
-$tagQuery = "SELECT * FROM tag WHERE skill_id IN (SELECT skill_id FROM skill WHERE user_id = ?)";
-$stmt = $conn->prepare($tagQuery);
-$stmt->bind_param("i", $requested_user_id); // Use the requested user_id
-$stmt->execute();
-$tagResult = $stmt->get_result();
+if ($skill_id !== null) {
+    $tagQuery = "SELECT * FROM tag WHERE skill_id = ?";
+    $stmt = $conn->prepare($tagQuery);
+    $stmt->bind_param("i", $skill_id);
+} else {
+    $tagQuery = "SELECT * FROM tag WHERE skill_id IN (SELECT skill_id FROM skill WHERE user_id = ?)";
+    $stmt = $conn->prepare($tagQuery);
+    $stmt->bind_param("i", $requested_user_id);
+}
+
+// Execute and check for errors
+if ($stmt->execute()) {
+    $tagResult = $stmt->get_result();
+} else {
+    echo json_encode(["status" => "error", "message" => "Database error: " . $stmt->error]);
+    exit();
+}
+
 
 $tag = [];
 if ($tagResult->num_rows > 0) {
