@@ -3,27 +3,56 @@ class Profile extends HTMLElement {
         super();
         this.isActive = false;
         this.borderElement = null;
+        this.render();
+    }
+
+    render() {
         const size = this.getAttribute("size") || "";
         const clickable = this.getAttribute("clickable") || "yes";
-        const imgSrc = this.getAttribute("img-src"); // Get the img-src attribute
+        const imgSrc = this.getAttribute("img-src");
+        const status = this.getAttribute("status") || "";
+        const navi = this.getAttribute("navi") || "true";
 
-        // Handle null or undefined img-src
-        const img = imgSrc ? "../../" + imgSrc : "../image/profile.jfif"; 
-        console.log("Image path:", img); // Debugging
+        const img = imgSrc ? "../../" + imgSrc : "../image/profile.jfif";
+        console.log("Image path:", img);
+        console.log("status:", status);
+        console.log("clickable:", clickable);
+
+        // Determine status color and text
+        const statusColor = status === "Busy" ? "#FF9800" : "#22C55E";
+        const statusText = status === "Busy" ? "User is busy" : "User is active";
 
         this.innerHTML = `
-        <div class="relative">
-            <div style="width: ${size}; height: ${size}; background: url(${img});background-size: contain;" class="box-border bg-[url(${img})] border-4 border-[#F1F5F9] shadow-[0px_4px_4px_rgba(0,_0,_0,_0.25),_0px_4px_4px_#C4D3E0,_5px_-3px_4px_#C4D3E0] rounded-full bg-cover bg-center ${(clickable !== "no") ? "cursor-pointer" : "" } hover:shadow-[0px_6px_10px_rgba(0,_0,_0,_0.25),_0px_6px_8px_#C4D3E0,_8px_-4px_6px_#C4D3E0] transition-all duration-300">
+        <div class="relative group">
+            <div style="width: ${size}; height: ${size}; background: url(${img});background-size: contain;" 
+                 class="box-border bg-[url(${img})] border-4 border-[#F1F5F9] shadow-[0px_4px_4px_rgba(0,_0,_0,_0.25),_0px_4px_4px_#C4D3E0,_5px_-3px_4px_#C4D3E0] 
+                        rounded-full bg-cover bg-center ${clickable !== "no" ? "cursor-pointer" : ""} 
+                        hover:shadow-[0px_6px_10px_rgba(0,_0,_0,_0.25),_0px_6px_8px_#C4D3E0,_8px_-4px_6px_#C4D3E0] 
+                        transition-all duration-300">
             </div>
+            
+            ${
+                navi === "true" ? `
+                <div class="absolute -bottom-1 -right-1 flex items-center">
+                    <div class="size-3 rounded-full animate-pulse w-4 h-4 absolute left-[-42px] top-[-36px]"
+                         style="background-color: ${statusColor};
+                                box-shadow: 0 0 6px ${statusColor}">
+                    </div>
+                    <div class="absolute bottom-0 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                               bg-white/90 px-2 py-1 rounded-full text-xs whitespace-nowrap shadow-lg">
+                        ${statusText}
+                    </div>
+                </div>` : ""
+            }
         </div>
         `;
 
         if (clickable !== "no") {
-            this.addEventListener('click', this.toggleBorder);
+            console.log("Adding click event listener");
+            this.addEventListener('click', this.toggleBorder.bind(this));
 
-            // Add document click listener to handle clicks outside
+            // Add a document click listener to close the menu when clicking outside
             document.addEventListener('click', (event) => {
-                // Check if click is outside of the component and menu is open
                 if (this.isActive && !this.contains(event.target)) {
                     this.closeMenu();
                 }
@@ -35,39 +64,64 @@ class Profile extends HTMLElement {
         if (this.borderElement) {
             this.borderElement.style.opacity = '0';
             this.borderElement.style.transform = 'translateY(130%) scale(1)';
-            this.isActive = false;
+            
             setTimeout(() => {
                 this.borderElement?.remove();
-                this.borderElement = null;
+                this.borderElement = null; // Clear the reference
             }, 300);
         }
     }
 
     toggleBorder(event) {
-        // Prevent the click event from bubbling up to document
-        event.stopPropagation();
-
-        if (!this.isActive) {
+        event.stopPropagation(); // Prevent event bubbling
+        console.log("Before toggle:", this.isActive, "hiii");
+    
+        if (this.isToggling) return; // Prevent double triggers
+        this.isToggling = true;
+    
+        if (this.isActive) {
+            console.log("Closing menu");
+            this.closeMenu();
+            this.isActive = false;
+        } else {
+            console.log("Opening menu");
             this.borderElement = document.createElement('div');
             this.borderElement.className = 'absolute -bottom-2 left-1/2 -translate-x-1/2 border-2 border-[#f1f5f9] rounded-xl opacity-0 transition-all duration-300 w-[100px] py-3 bg-[#F1F5F9]';
             this.borderElement.style.boxShadow = '8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF';
             this.borderElement.innerHTML = `
             <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Edit</p>
-            <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1 ">Log out</p>
+            <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Log out</p>
             `;
             this.querySelector('.relative').appendChild(this.borderElement);
-
+            
             requestAnimationFrame(() => {
                 if (this.borderElement) {
                     this.borderElement.style.opacity = '1';
                     this.borderElement.style.transform = 'translateY(130%) scale(1.2)';
                 }
             });
-        } else {
-            this.closeMenu();
-            this.isActive = !this.isActive;
+    
+            this.isActive = true;
         }
-        this.isActive = !this.isActive;
+    
+        console.log("After toggle:", this.isActive, "hiii");
+    
+        // Prevent rapid toggling by using a delay
+        setTimeout(() => {
+            this.isToggling = false;
+        }, 300); // Match with transition duration
+    }
+    
+
+    static get observedAttributes() {
+        return ['img-src', 'status', 'size', 'clickable', 'navi'];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue !== newValue) {
+            this.innerHTML = ''; // Clear the current content
+            this.render(); // Re-render the component
+        }
     }
 }
 

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: url(./cool-background.png) no-repeat center center;
+            background-size: cover;
+                }
+
+        
+    
+
+        .login-card {
+            background: #f4f2f2;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgb(241, 239, 239);
+            padding: 40px 30px;
+            width: 360px;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .login-card .input-box {
+            position: relative;
+            margin: 10px 0;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 12px 15px;
+            padding-right: 40px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background: #f9f9f9;
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1), inset -2px -2px 5px rgba(255, 255, 255, 0.7);
+        }
+
+        .login-card .clear-icon {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            font-size: 25px;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .login-card button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: #007bff;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-card button:hover {
+            background: #0056b3;
+        }
+
+        .login-card .google-login {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            font-size: 15px;
+            color: #333;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .google-login i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            width: 40px;
+            font-size: 30px;
+            color: #090808;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: color 0.3s;
+            box-shadow: 0 0 10px rgba(97, 38, 38, 0.2);
+            margin-left: 200px;   
+        }
+
+        .login-card .google-login :hover {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Login</h2>
+        <form id="login-form" method="POST">
+            <div class="input-box">
+                <input type="text" name="username" placeholder="Username or Email" id="username" required>
+                <span class="clear-icon" onclick="clearInput('username')">&times;</span>
+            </div>
+            <div class="input-box">
+                <input type="password" id="password" name="email" placeholder="Password" required>
+                <span class="clear-icon" onclick="clearInput('email')">&times;</span>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <div class="google-login">
+            <span>Or Login Using</span>
+            <i class="bx bxl-google"></i>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const notyf = new Notyf();
+
+            document.getElementById("login-form").addEventListener("submit", async function(event) {
+                event.preventDefault();
+
+                const username = document.getElementById("username").value.trim();
+                const password = document.getElementById("password").value.trim();
+
+                if (!username) {
+                    notyf.error("Email is required!");
+                    return;
+                }
+
+                if (!password) {
+                    notyf.error("Password is required!");
+                    return;
+                }
+
+                // API request to login
+                try {
+                    const response = await fetch("http://localhost/skillSwap/skill-swap/login_and_logout.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username, password, login: "true" })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.status == "success") {
+                        notyf.success("Login successful!");
+                        localStorage.setItem("JWT", result.token);
+                        setTimeout(() => {
+                            window.location.href = "../Home/index.html"; // Redirect to dashboard
+                        }, 1500);
+                    } else {
+                        notyf.error(result.message || "Login failed!");
+                    }
+                } catch (error) {
+                    console.error("Login Error:", error);
+                    notyf.error("Server error, please try again later.");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
