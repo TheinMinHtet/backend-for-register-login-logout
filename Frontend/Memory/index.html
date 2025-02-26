@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../output.css" rel="stylesheet">
+  <script defer src="../Components/search.js"></script>
+  <script defer src="../Components/navigation.js"></script>
+  <script defer src="../Components/rounded-icon.js"></script>
+  <script defer src="../Components/searchBar.js"></script>
+  <script defer src="../Components/profile.js"></script>
+  <script defer src="../Components/wrapper.js"></script>
+  <script defer src="../Components/memoryForm.js"></script>
+  <script defer src="../Components/button.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <style>
+    .roboto-condensed-font {
+  font-family: "Roboto Condensed", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+
+/* For Chrome, Safari */
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background-color: #F5F5F5;
+        }
+        
+        .frame {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px;
+            gap: 17px;
+           
+            height: 499px;
+            background: #F1F5F9;
+            box-shadow: 8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF;
+            border-radius: 24px;
+        }
+
+        .image-container {
+            width: 804px;
+            height: 498px;
+            background: url('../Login/cool-background.png') no-repeat center/cover;
+            border: 3px solid #F1F5F9;
+            border-radius: 16px;
+        }
+
+        .upload-box {
+            width: 90%;
+            height: 5000px;
+            top: -30px;
+            border: 2px dashed #0099ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            background-color: #eef6ff; /* Light blue background */
+            padding: 10px; /* Padding inside the rectangle */
+            margin-top: 61px;
+        }
+
+        .upload-box img {
+            width: calc(100% - 20px); /* Image stays inside padding */
+            height: calc(100% - 20px);
+            object-fit: cover;
+            border-radius: 8px;
+            display: none;
+        }
+        #plusIcon {
+            font-size: 30px;
+            color: #007BFF;
+        }
+
+        .text-box {
+            align-items: center;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            gap: 10px;
+            
+            background: #D3E8FB;
+            border-radius: 1000px;
+            flex: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            width:80%;
+
+        }
+
+        .styled-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 20px;
+            width: 100%;
+            padding: 10px;
+        }
+
+        .styled-input::placeholder {
+            color: #666;
+        }
+
+        .text-box p {
+            margin: 0 auto;
+            width: 732px;
+            font-weight: 400;
+            font-size: 20px;
+            line-height: 23px;
+            color: #2F2F2F;
+            text-align: center;
+        }
+
+        .profile-box {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            gap: 10px;
+            width: 52px;
+            height: 49px;
+            background: #2F2F2F;
+            border-radius: 28px;
+           
+        }
+
+        .profile-box .profile-pic {
+            width: 44px;
+            height: 41px;
+            background: url('../image/profile.jfif') no-repeat center/cover;
+            border: 1px solid #F1F5F9;
+            border-radius: 50%;
+        }
+        
+        .skill-box {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            width: 112px;
+            height: 69px;
+            background: #CBF5D7;
+            border-radius: 0px 1000px 1000px 0px;
+        }
+
+        .skill-box p {
+            font-weight: 400;
+            font-size: 20px;
+            line-height: 23px;
+            color: #2F2F2F;
+            text-align: center;
+        }
+    </style>
+
+
+</head>
+<body class="roboto-condensed-font">
+    <navi-gation></navi-gation>
+    <wrap-per>
+      <memory-form></memory-form>
+    </wrap-per>
+    
+  
+</body>
+</html>

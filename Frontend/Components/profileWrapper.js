@@ -3,12 +3,10 @@ class ProfileWrapper extends HTMLElement {
         super();
 
         // Call the render method to initialize the component
-        
+        this.render();
 
         // Fetch user profile data from the server
         this.fetchUserProfile();
-
-        this.render();
     }
 
     render() {
@@ -76,8 +74,13 @@ class ProfileWrapper extends HTMLElement {
         if (bentoPart) {
             bentoPart.setAttribute("data", JSON.stringify(userData));
         }
+
+        // Update <image-slider> component
+        const imageSlider = this.querySelector("image-slider");
+        if (imageSlider && userData.skills) {
+            imageSlider.setAttribute("skills", JSON.stringify(userData.skills));
+        }
     }
 }
 
-// Define the custom element
 customElements.define("profile-wrapper", ProfileWrapper);
