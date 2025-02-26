@@ -1,14 +1,12 @@
 class ImageSlider extends HTMLElement {
+    static get observedAttributes() {
+        return ["skills"];
+    }
+
     constructor() {
         super();
         this.currentSlide = 0;
-        this.originalSkills = [
-            { title: "Guitar", description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut eu mollis tortor, sed posuere elit. Pellentesque sed imperdiet arcu, non interdum libero. Mauris non mi id enim volutpat efficitur. Donec quis eros at nunc maximus tristique. Nunc pretium risus magna, et vehicula leo tincidunt nec. Mauris mollis vehicula ante ac sollicitudin. Nullam non justo at purus accumsan aliquam.", tags: [{ text: "boy" }, { text: "girl" }] },
-            { title: "Piano", description: "Mastering the piano notes.", tags: [{ text: "music" }, { text: "classic" }] },
-            { title: "Coding", description: "Building amazing projects.", tags: [{ text: "developer" }, { text: "tech" }] },
-            { title: "Photography", description: "Capturing the beauty of life.", tags: [{ text: "lens" }, { text: "nature" }] },
-            { title: "Dancing", description: "Expressing with movement.", tags: [{ text: "hiphop" }, { text: "freestyle" }] }
-        ];
+        this.skills = []; // Initialize skills as an empty array
     }
 
     connectedCallback() {
@@ -16,21 +14,30 @@ class ImageSlider extends HTMLElement {
         this.attachEventListeners();
     }
 
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === "skills" && newValue) {
+            this.skills = JSON.parse(newValue); // Parse the skills attribute
+            this.render();
+        }
+    }
+
     nextSlide() {
-        const maxSlide = Math.ceil(this.originalSkills.length / 2) - 1;
+        const maxSlide = Math.ceil(this.skills.length / 2) - 1;
         this.currentSlide = (this.currentSlide + 1) > maxSlide ? 0 : this.currentSlide + 1;
         this.updateSlide();
     }
 
     prevSlide() {
-        const maxSlide = Math.ceil(this.originalSkills.length / 2) - 1;
+        const maxSlide = Math.ceil(this.skills.length / 2) - 1;
         this.currentSlide = (this.currentSlide - 1) < 0 ? maxSlide : this.currentSlide - 1;
         this.updateSlide();
     }
 
     updateSlide() {
         const slider = this.querySelector('.slider-container');
-        slider.style.transform = `translateX(-${this.currentSlide * 100}%)`;
+        if (slider) {
+            slider.style.transform = `translateX(-${this.currentSlide * 100}%)`;
+        }
         // Update dots
         const dots = this.querySelectorAll('.dot');
         dots.forEach((dot, index) => {
@@ -42,14 +49,24 @@ class ImageSlider extends HTMLElement {
     attachEventListeners() {
         const nextBtn = this.querySelector('.next-btn');
         const prevBtn = this.querySelector('.prev-btn');
-        nextBtn.addEventListener('click', () => this.nextSlide());
-        prevBtn.addEventListener('click', () => this.prevSlide());
+        if (nextBtn) nextBtn.addEventListener('click', () => this.nextSlide());
+        if (prevBtn) prevBtn.addEventListener('click', () => this.prevSlide());
     }
 
     render() {
-        const numberOfPairs = Math.ceil(this.originalSkills.length / 2);
+        if (this.skills.length === 0) {
+            // Display a fallback message if the skills array is empty
+            this.innerHTML = `
+                <div class="w-full h-[530px] flex justify-center items-center">
+                    <p class="text-2xl text-[#2F2F2F]">No skills available. Add some skills to get started!</p>
+                </div>
+            `;
+            return; // Exit the render method early
+        }
+
+        const numberOfPairs = Math.ceil(this.skills.length / 2);
         const pairs = Array.from({ length: numberOfPairs }, (_, i) => {
-            return this.originalSkills.slice(i * 2, i * 2 + 2);
+            return this.skills.slice(i * 2, i * 2 + 2);
         });
 
         this.innerHTML = `
@@ -94,6 +111,8 @@ class ImageSlider extends HTMLElement {
                 </div>
             </div>
         `;
+
+        this.attachEventListeners(); // Re-attach event listeners after rendering
     }
 }
 
