@@ -289,3 +289,4 @@ if (empty($updates)) {
         echo json_encode(["status" => "error", "message" => "Failed to update profile", "error" => $stmt->error]);
     }
     $stmt->close();
+}
