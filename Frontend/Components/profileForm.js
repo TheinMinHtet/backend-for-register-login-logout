@@ -145,20 +145,7 @@ class ProfileForm extends HTMLElement {
                                       text-gray-700 placeholder-gray-400">
                     </div>
 
-                    <!-- Age Input -->
-                    <div class="relative">
-                        <label for="age" class="block text-sm font-medium text-gray-700 mb-2">Age</label>
-                        <input type="number" 
-                               id="age" 
-                               min="0"
-                               max="150"
-                               placeholder="Enter your age"
-                               class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
-                                      shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
-                                      focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                                      text-gray-700 placeholder-gray-400
-                                      [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                    </div>
+                    
 
                     <!-- Phone Number Input -->
                     <div class="relative">
@@ -173,26 +160,7 @@ class ProfileForm extends HTMLElement {
                                       text-gray-700 placeholder-gray-400">
                     </div>
 
-                    <!-- Country Code Input -->
-                    <div class="relative">
-                        <label for="countryCode" class="block text-sm font-medium text-gray-700 mb-2">Country Code</label>
-                        <select id="countryCode" 
-                                class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
-                                       shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
-                                       focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                                       text-gray-700">
-                            <option value="+1">+1 (USA/Canada)</option>
-                            <option value="+44">+44 (UK)</option>
-                            <option value="+81">+81 (Japan)</option>
-                            <option value="+86">+86 (China)</option>
-                            <option value="+91">+91 (India)</option>
-                            <option value="+61">+61 (Australia)</option>
-                            <option value="+49">+49 (Germany)</option>
-                            <option value="+33">+33 (France)</option>
-                            <!-- Add more country codes as needed -->
-                        </select>
-                    </div>
-
+                   
                     <!-- Title Input -->
                     <div class="relative">
                         <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Title</label>
@@ -208,11 +176,11 @@ class ProfileForm extends HTMLElement {
 
                     <!-- Description Textarea -->
                     <div class="relative">
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Biography</label>
                         <textarea id="description" 
                                   required
                                   rows="4" 
-                                  placeholder="Enter description"
+                                  placeholder="Enter bio"
                                   class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
                                          focus:outline-none focus:ring-2 focus:ring-blue-500/50
