@@ -88,14 +88,117 @@ if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPL
     exit(); // Stop further execution after handling the image upload
 }
 
-$city = isset($_POST['city']) ? trim($_POST['city']) : null;
-$region = isset($_POST['region']) ? trim($_POST['region']) : null;
-$country = isset($_POST['country']) ? trim($_POST['country']) : null;
-$bio = isset($_POST['bio']) ? trim($_POST['bio']) : null;
-$status = isset($_POST['status']) ? trim($_POST['status']) : null;
+
+// :id url
+// Parse the URL path to extract user_id for GET requests
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $requestUri = $_SERVER['REQUEST_URI']; // Get the full request URI
+    $scriptName = $_SERVER['SCRIPT_NAME']; // Get the script name (e.g., /skillSwap/skill-swap/user_profile.php)
+
+    // Remove the script name from the request URI to get the path
+    $path = substr($requestUri, strlen($scriptName));
+
+    // Check if the path matches the pattern /:user_id
+    if (preg_match('/^\/(\d+)$/', $path, $matches)) {
+        $user_id = (int) $matches[1]; // Extract user_id from the path
+
+        // Fetch user data for the given user_id
+        $userQuery = "
+            SELECT 
+                u.user_id, 
+                u.username, 
+                u.email, 
+                u.password, 
+                u.otp, 
+                u.otp_expiry, 
+                u.telegram_phone, 
+                u.telegram_username, 
+                u.created_at, 
+                u.status, 
+                u.bio, 
+                u.country, 
+                u.region, 
+                u.city, 
+                u.profile_img, 
+                u.points,
+                m.img_name AS memory_img, 
+                m.description AS memory_description,
+                s.description AS skill_description,
+                l.learnt_count, 
+                l.taught_count
+            FROM user u
+            LEFT JOIN memory m ON u.user_id = m.user_id
+            LEFT JOIN skill s ON u.user_id = s.user_id
+            LEFT JOIN log l ON u.user_id = l.user_id
+            WHERE u.user_id = ?
+            ORDER BY u.user_id;
+        ";
+
+        $stmt = $conn->prepare($userQuery);
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $userId = $row['user_id'];
+
+            if (!isset($users[$userId])) {
+                $users[$userId] = [
+                    "user_id" => $row["user_id"],
+                    "username" => $row["username"],
+                    "email" => $row["email"],
+                    "password" => $row["password"],
+                    "otp" => $row["otp"],
+                    "otp_expiry" => $row["otp_expiry"],
+                    "telegram_phone" => $row["telegram_phone"],
+                    "telegram_username" => $row["telegram_username"],
+                    "created_at" => $row["created_at"],
+                    "status" => $row["status"],
+                    "bio" => $row["bio"],
+                    "country" => $row["country"],
+                    "region" => $row["region"],
+                    "city" => $row["city"],
+                    "profile_img" => $row["profile_img"],
+                    "skill_learnt" => $row["learnt_count"],
+                    "skill_taught" => $row["taught_count"],
+                    "points" => $row["points"],
+                    "memories" => [],
+                    "skills" => []
+                ];
+            }
+
+            if (!empty($row['memory_img']) && !in_array($row['memory_img'], array_column($users[$userId]['memories'], 'img_name'))) {
+                $users[$userId]["memories"][] = [
+                    "img_name" => $row["memory_img"],
+                    "description" => $row["memory_description"]
+                ];
+            }
+
+            if (!empty($row['skill_description'])) {
+                $users[$userId]["skills"][] = [
+                    "description" => $row["skill_description"]
+                ];
+            }
+        }
+
+        // Reset array index
+        $users = array_values($users);
+
+        // Return the structured response
+        echo json_encode([
+            "status" => "success",
+            "message" => "User data fetched successfully",
+            "user" => $users
+        ]);
+        exit(); // Stop further execution
+    }
+}
+
+// :id url
 
 // Fetch current profile data
-$currentQuery = "SELECT city, region, country, bio, status FROM user WHERE user_id = ?";
+$currentQuery = "SELECT username, password, telegram_phone, telegram_username, city, region, country, bio, status FROM user WHERE user_id = ?";
 $stmt = $conn->prepare($currentQuery);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -103,11 +206,42 @@ $result = $stmt->get_result();
 $currentData = $result->fetch_assoc();
 $stmt->close();
 
+// Get new fields from POST data
+$username = isset($_POST['username']) ? trim($_POST['username']) : null;
+$password = isset($_POST['password']) ? trim($_POST['password']) : null;
+$telegram_phone = isset($_POST['telegram_phone']) ? trim($_POST['telegram_phone']) : null;
+$telegram_username = isset($_POST['telegram_username']) ? trim($_POST['telegram_username']) : null;
+$city = isset($_POST['city']) ? trim($_POST['city']) : null;
+$region = isset($_POST['region']) ? trim($_POST['region']) : null;
+$country = isset($_POST['country']) ? trim($_POST['country']) : null;
+$bio = isset($_POST['bio']) ? trim($_POST['bio']) : null;
+$status = isset($_POST['status']) ? trim($_POST['status']) : null;
+
 // Check if at least one value is different
 $updates = [];
 $params = [];
 $types = "";
 
+if (isset($username) && $username !== $currentData["username"]) {
+    $updates[] = "username = ?";
+    $params[] = $username;
+    $types .= "s";
+}
+if (isset($password) && $password !== $currentData["password"]) {
+    $updates[] = "password = ?";
+    $params[] = password_hash($password, PASSWORD_DEFAULT); // Hash the password
+    $types .= "s";
+}
+if (isset($telegram_phone) && $telegram_phone !== $currentData["telegram_phone"]) {
+    $updates[] = "telegram_phone = ?";
+    $params[] = $telegram_phone;
+    $types .= "s";
+}
+if (isset($telegram_username) && $telegram_username !== $currentData["telegram_username"]) {
+    $updates[] = "telegram_username = ?";
+    $params[] = $telegram_username;
+    $types .= "s";
+}
 if (isset($city) && $city !== $currentData["city"]) {
     $updates[] = "city = ?";
     $params[] = $city;
@@ -138,16 +272,33 @@ if (empty($updates)) {
     // If no changes are detected, fetch the user data and return it
     $userQuery = "
         SELECT 
-            u.user_id, u.username, u.email, u.password, u.otp, u.otp_expiry, 
-            u.telegram_phone, u.telegram_username, u.created_at, u.status, 
-            u.bio, u.country, u.region, u.city, u.profile_img, u.points,
-            m.img_name AS memory_img, m.description AS memory_description,
-            s.description AS skill_description
-        FROM user u
-        LEFT JOIN memory m ON u.user_id = m.user_id
-        LEFT JOIN skill s ON u.user_id = s.user_id
-        WHERE u.user_id = ? 
-        ORDER BY u.user_id
+    u.user_id, 
+    u.username, 
+    u.email, 
+    u.password, 
+    u.otp, 
+    u.otp_expiry, 
+    u.telegram_phone, 
+    u.telegram_username, 
+    u.created_at, 
+    u.status, 
+    u.bio, 
+    u.country, 
+    u.region, 
+    u.city, 
+    u.profile_img, 
+    u.points,
+    m.img_name AS memory_img, 
+    m.description AS memory_description,
+    s.description AS skill_description,
+    l.learnt_count, 
+    l.taught_count
+FROM user u
+LEFT JOIN memory m ON u.user_id = m.user_id
+LEFT JOIN skill s ON u.user_id = s.user_id
+LEFT JOIN log l ON u.user_id = l.user_id
+WHERE u.user_id = ?
+ORDER BY u.user_id;
     ";
 
     $stmt = $conn->prepare($userQuery);
@@ -176,6 +327,8 @@ if (empty($updates)) {
                 "region" => $row["region"],
                 "city" => $row["city"],
                 "profile_img" => $row["profile_img"],
+                "skill_learnt" => $row["learnt_count"],
+                "skill_taught" => $row["taught_count"],
                 "points" => $row["points"],
                 "memories" => [],
                 "skills" => []
@@ -218,16 +371,33 @@ if (empty($updates)) {
         // Fetch updated user data
         $userQuery = "
             SELECT 
-                u.user_id, u.username, u.email, u.password, u.otp, u.otp_expiry, 
-                u.telegram_phone, u.telegram_username, u.created_at, u.status, 
-                u.bio, u.country, u.region, u.city, u.profile_img, u.points,
-                m.img_name AS memory_img, m.description AS memory_description,
-                s.description AS skill_description
-            FROM user u
-            LEFT JOIN memory m ON u.user_id = m.user_id
-            LEFT JOIN skill s ON u.user_id = s.user_id
-            WHERE u.user_id = ? 
-            ORDER BY u.user_id
+    u.user_id, 
+    u.username, 
+    u.email, 
+    u.password, 
+    u.otp, 
+    u.otp_expiry, 
+    u.telegram_phone, 
+    u.telegram_username, 
+    u.created_at, 
+    u.status, 
+    u.bio, 
+    u.country, 
+    u.region, 
+    u.city, 
+    u.profile_img, 
+    u.points,
+    m.img_name AS memory_img, 
+    m.description AS memory_description,
+    s.description AS skill_description,
+    l.learnt_count, 
+    l.taught_count
+FROM user u
+LEFT JOIN memory m ON u.user_id = m.user_id
+LEFT JOIN skill s ON u.user_id = s.user_id
+LEFT JOIN log l ON u.user_id = l.user_id
+WHERE u.user_id = ?
+ORDER BY u.user_id;
         ";
 
         $stmt = $conn->prepare($userQuery);
@@ -256,6 +426,8 @@ if (empty($updates)) {
                     "region" => $row["region"],
                     "city" => $row["city"],
                     "profile_img" => $row["profile_img"],
+                    "skill_learnt" => $row["learnt_count"],
+                    "skill_taught" => $row["taught_count"],
                     "points" => $row["points"],
                     "memories" => [],
                     "skills" => []
