@@ -43,27 +43,57 @@ class SkillForm extends HTMLElement {
         }
     }
 
-    handleSubmit(e) {
+
+    async handleSubmit(e) {
         e.preventDefault();
+        const notyf = new Notyf();
+        
+        const title = this.querySelector('#title').value.trim();
+        const description = this.querySelector('#description').value.trim();
+        const days = this.querySelector('#days').value.trim();
+
+
+        if (!title || !description || !days || this.selectedTags.length === 0) {
+            notyf.error('All fields are required!');
+            return;
+        }
+
+        const token = localStorage.getItem('JWT');
+        if (!token) {
+            notyf.error('Unauthorized! Please log in.');
+            return;
+        }
+
         const formData = {
-            title: this.querySelector('#title').value,
-            description: this.querySelector('#description').value,
-            tags: this.selectedTags
+            title,
+            description,
+            tags: this.selectedTags.map(tag => tag.text),
+            hours: days // Sending tags as an array of strings
         };
-        console.log('Form submitted:', formData);
-        // Reset form
-        this.querySelector('form').reset();
-        this.selectedTags = [];
-        this.availableTags = [
-            { id: 1, text: "music", color: "#F2FCE2" },
-            { id: 2, text: "law", color: "#FFDEE2" },
-            { id: 3, text: "tech", color: "#E5DEFF" },
-            { id: 4, text: "sports", color: "#D3E4FD" },
-            { id: 5, text: "cooking", color: "#FEC6A1" },
-            { id: 6, text: "writing", color: "#FEF7CD" },
-            { id: 7, text: "photography", color: "#FDE1D3" },
-            { id: 8, text: "design", color: "#E5DEFF" }
-        ];
+
+        console.log(formData)
+
+        try {
+            const response = await fetch('http://localhost/skillSwap/skill-swap/skill_crud.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (response.status === "success") {
+                notyf.success(result.message || 'Skill added successfully!');
+                this.resetForm();
+            } else {
+                notyf.error(result.message || 'An error occurred.');
+            }
+        } catch (error) {
+            notyf.error('Network error. Please try again later.');
+        }
         this.render();
         this.attachEventListeners();
     }
@@ -91,6 +121,9 @@ class SkillForm extends HTMLElement {
     }
 
     render() {
+        const titleValue = this.querySelector('#title')?.value || '';
+        const descriptionValue = this.querySelector('#description')?.value || '';
+        const numValue = this.querySelector("#days")?.value || '';
         this.innerHTML = `
             <div class="max-w-2xl mx-auto p-8">
                 <h1 class="font-normal text-8xl leading-[112px] text-[#2F2F2F] pt-8 mb-16">Your Skill</h1>
@@ -101,6 +134,7 @@ class SkillForm extends HTMLElement {
                                id="title" 
                                required
                                placeholder="Enter title"
+                               value="${titleValue}"
                                class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                       shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
                                       focus:outline-none focus:ring-2 focus:ring-blue-500/50
@@ -113,10 +147,24 @@ class SkillForm extends HTMLElement {
                                   required
                                   rows="4" 
                                   placeholder="Enter description"
+                                  value="${descriptionValue}"
                                   class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
                                          focus:outline-none focus:ring-2 focus:ring-blue-500/50
                                          text-gray-700 placeholder-gray-400"></textarea>
+                    </div>
+
+                    <!-- Number -->
+                    <div class="relative">
+                        <input type="number" 
+                               id="days" 
+                               required
+                               placeholder="Enter days"
+                               value="${numValue}"
+                               class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
+                                      shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
+                                      focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                                      text-gray-700 placeholder-gray-400">
                     </div>
 
                     <!-- Tags Section -->

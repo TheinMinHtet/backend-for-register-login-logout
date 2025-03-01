@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Register</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
@@ -13,17 +13,17 @@
 </head>
 <body>
     <div class="container">
-        <form id="login-card" class="login-card">
-            <h1>Login</h1>
+        <form id="register-card" class="register-card">
+            <h1>Welcome</h1>
+            <div class="input-group">
+                <input id="username" name="username" type="text" placeholder="User name">
+            </div>
             <div class="input-group">
                 <input id="email" name="email" type="text" placeholder="Email">
             </div>
-            <div class="input-group">
-                <input id="password" name="password" type="password" placeholder="Password">
-            </div>
-            <button type="submit" class="submit-btn">Login</button>
+            <button type="submit" class="submit-btn">Next</button>
             <div class="social-login">
-                <p>Or Login Using</p>
+                <p>Or Signup Using</p>
                 <div class="social-icons">
                     <div class="google-icon"></div>
                 </div>
@@ -35,16 +35,20 @@
         document.addEventListener("DOMContentLoaded", () => {
             const notyf = new Notyf();
 
-            document.getElementById("login-card").addEventListener("submit", async function(event) {
+            document.getElementById("register-card").addEventListener("submit", function(event) {
                 event.preventDefault();
 
+                const username = document.getElementById("username").value.trim();
                 const email = document.getElementById("email").value.trim();
-                const password = document.getElementById("password").value.trim();
 
                 // Email validation regex
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-                // Validation
+                if (!username) {
+                    notyf.error("Username is required!");
+                    return;
+                }
+
                 if (!email) {
                     notyf.error("Email is required!");
                     return;
@@ -55,42 +59,14 @@
                     return;
                 }
 
-                if (!password) {
-                    notyf.error("Password is required!");
-                    return;
-                }
+                // If validation passes, store in localStorage
+                localStorage.setItem("username", username);
+                localStorage.setItem("email", email);
 
-                // Prepare data for the API request
-                const data = {
-                    email: email,
-                    password: password
-                };
-
-                try {
-                    // Send POST request to the login API
-                    const response = await fetch("http://localhost/skillSwap/skill-swap/login_and_logout.php", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(data)
-                    });
-
-                    const result = await response.json();
-
-                    // Handle API response
-                    if (response.ok && result.success) {
-                        notyf.success("Login successful!");
-                        setTimeout(() => {
-                            window.location.href = "./dashboard.html"; // Redirect to dashboard or home page
-                        }, 1500);
-                    } else {
-                        notyf.error(result.message || "Login failed. Please try again.");
-                    }
-                } catch (error) {
-                    console.error("Error during login:", error);
-                    notyf.error("An error occurred. Please try again.");
-                }
+                notyf.success("Registration successful!");
+                setTimeout(() => {
+                    window.location.href = "./registrationPwd.html"; // Change this to your desired file
+                }, 1500); 
             });
         });
     </script>

@@ -1259,9 +1259,6 @@
   .list-image-none {
     list-style-image: none;
   }
-  .\[appearance\:textfield\] {
-    appearance: textfield;
-  }
   .appearance-auto {
     appearance: auto;
   }
@@ -3040,16 +3037,6 @@
       --tw-scale-y: 90%;
       --tw-scale-z: 90%;
       scale: var(--tw-scale-x) var(--tw-scale-y);
-    }
-  }
-  .\[\&\:\:-webkit-inner-spin-button\]\:appearance-none {
-    &::-webkit-inner-spin-button {
-      appearance: none;
-    }
-  }
-  .\[\&\:\:-webkit-outer-spin-button\]\:appearance-none {
-    &::-webkit-outer-spin-button {
-      appearance: none;
     }
   }
 }
