@@ -3,6 +3,7 @@ class SearchBar extends HTMLElement {
     super();
     this.selectedCategories = [];
     this.tags = []; 
+    this.token = localStorage["JWT"];
     this.getRandomColor = () => {
       const colors = ['#BEFBFF', '#C8FFBE', '#FFF7BE', '#FFBEC8', '#BEC7FF'];
       return colors[Math.floor(Math.random() * colors.length)];
@@ -21,7 +22,14 @@ class SearchBar extends HTMLElement {
       const url = `http://localhost/skillSwap/skill-swap/search_page.php?keyword=${encodeURIComponent(keyword)}&tag=${encodeURIComponent(formattedTags)}`;
       console.log('Fetching from URL:', url);
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${this.token}`
+        },
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -43,6 +51,7 @@ class SearchBar extends HTMLElement {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          "Authorization": `Bearer ${this.token}`
         },
       });
 
@@ -51,6 +60,10 @@ class SearchBar extends HTMLElement {
       }
 
       const data = await response.json();
+      if (!data || !Array.isArray(data.tag)) {
+        throw new Error('Invalid tags data received from the API');
+      }
+
       console.log('Tags fetched:', data);
       return data;
     } catch (error) {
@@ -63,6 +76,8 @@ class SearchBar extends HTMLElement {
     const uniqueTags = new Set();
 
     tagsData.tag.forEach(tag => {
+      if (!tag.tag) return; // Skip if tag.tag is null or undefined
+
       try {
         // Remove extra quotes and parse the tag string
         const cleanedTagString = tag.tag.replace(/^"|"$/g, ''); // Remove leading/trailing quotes
@@ -238,6 +253,8 @@ class SearchBar extends HTMLElement {
 
   renderSelectedCategories() {
     const searchForDiv = this.querySelector('#searchFor');
+    if (!searchForDiv) return; // Ensure the element exists
+
     searchForDiv.innerHTML = this.selectedCategories.map(category => `
       <button
         data-id="${category.id}"
@@ -252,6 +269,7 @@ class SearchBar extends HTMLElement {
     `).join('');
 
     requestAnimationFrame(() => {
+      if (!this.isConnected) return; // Ensure the component is still connected
       searchForDiv.querySelectorAll('button').forEach(button => {
         button.style.opacity = '1';
         button.style.transform = 'scale(1)';
@@ -261,6 +279,8 @@ class SearchBar extends HTMLElement {
 
   renderAvailableCategories() {
     const availableContainer = this.querySelector('#available .flex');
+    if (!availableContainer) return; // Ensure the element exists
+
     const availableCategories = this.categories.filter(
       category => !this.selectedCategories.find(c => c.id === category.id)
     );
@@ -276,11 +296,16 @@ class SearchBar extends HTMLElement {
     `).join('');
 
     requestAnimationFrame(() => {
+      if (!this.isConnected) return; // Ensure the component is still connected
       availableContainer.querySelectorAll('button').forEach(button => {
         button.style.opacity = '1';
         button.style.transform = 'scale(1)';
       });
     });
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener('click', this.handleClickOutside);
   }
 }
 
