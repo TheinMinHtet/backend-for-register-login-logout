@@ -1,7 +1,7 @@
 <?php
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS, DELETE");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS, DELETE, PUT");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 use Firebase\JWT\JWT;
@@ -33,6 +33,36 @@ function verifyJWT($token) {
     }
 }
 
+// Function to check if a skill title is unique for a user
+function isSkillTitleUnique($conn, $user_id, $title, $skill_id = null) {
+    $query = "SELECT COUNT(*) AS count FROM skill WHERE user_id = ? AND name = ?";
+    $params = [$user_id, $title];
+    $types = "is";
+
+    if ($skill_id !== null) {
+        $query .= " AND skill_id != ?";
+        $params[] = $skill_id;
+        $types .= "i";
+    }
+
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        error_log("Database error: " . $conn->error);
+        return false;
+    }
+
+    $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $count = $row['count'] ?? 0;
+    $stmt->close();
+
+    return $count == 0; // If count is 0, the title is unique
+}
+
+
+
 // Get & verify token
 $token = getTokenFromHeader();
 if (!$token) {
@@ -48,7 +78,6 @@ $user_id = $decoded->user_id;
 
 // Handle DELETE Request for Skill Deletion
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-
     $data = json_decode(file_get_contents('php://input'), true);
     $skill_id = $data['skill_id'] ?? null;
 
@@ -92,14 +121,161 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     exit();
 }
 
+// Handle PUT Request for Skill Update
+if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+    // Decode the JSON input from the request body
+    $data = json_decode(file_get_contents('php://input'), true);
+    $skill_id = $data['skill_id'] ?? null;
+    $title = $data['title'] ?? null;
+    $description = $data['description'] ?? null;
+    $hours = $data['hours'] ?? null;
+    $tags = $data['tags'] ?? [];
+
+    // Log the request data for debugging
+    error_log("PUT Request Data: " . print_r($data, true));
+
+    // Validate required fields
+    if (!$skill_id || !$title || !$description || !$hours) {
+        echo json_encode(["status" => "error", "message" => "Skill ID, title, description, and hours are required"]);
+        exit();
+    }
+
+    // Check if the skill belongs to the user
+    $checkSkillQuery = "SELECT COUNT(*) FROM skill WHERE skill_id = ? AND user_id = ?";
+    $stmt = $conn->prepare($checkSkillQuery);
+    if (!$stmt) {
+        echo json_encode(["status" => "error", "message" => "Database error: " . $conn->error]);
+        exit();
+    }
+    $stmt->bind_param("ii", $skill_id, $user_id);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($count === 0) {
+        echo json_encode(["status" => "error", "message" => "You are not authorized to update this skill"]);
+        exit();
+    }
+
+    // Check if the skill title is unique for the user (excluding the current skill)
+    if (!isSkillTitleUnique($conn, $user_id, $title, $skill_id)) {
+        echo json_encode(["status" => "error", "message" => "Skill title already exists"]);
+        exit();
+    }
+
+    // Update the skill
+    $updateSkillQuery = "UPDATE skill SET name = ?, description = ?, hours = ? WHERE skill_id = ?";
+    $stmt = $conn->prepare($updateSkillQuery);
+    if (!$stmt) {
+        echo json_encode(["status" => "error", "message" => "Database error: " . $conn->error]);
+        exit();
+    }
+    $stmt->bind_param("ssii", $title, $description, $hours, $skill_id);
+
+    if ($stmt->execute()) {
+        $stmt->close();
+
+        // Update tags
+        $deleteTagsQuery = "DELETE FROM tag WHERE skill_id = ?";
+        $deleteStmt = $conn->prepare($deleteTagsQuery);
+        if (!$deleteStmt) {
+            echo json_encode(["status" => "error", "message" => "Database error: " . $conn->error]);
+            exit();
+        }
+        $deleteStmt->bind_param("i", $skill_id);
+        $deleteStmt->execute();
+        $deleteStmt->close();
+
+        // Insert new tags
+        $insertTagQuery = "INSERT INTO tag (skill_id, tag) VALUES (?, ?)";
+        $insertStmt = $conn->prepare($insertTagQuery);
+        if (!$insertStmt) {
+            echo json_encode(["status" => "error", "message" => "Database error: " . $conn->error]);
+            exit();
+        }
+        foreach ($tags as $tag) {
+            $insertStmt->bind_param("is", $skill_id, $tag);
+            $insertStmt->execute();
+        }
+        $insertStmt->close();
+
+        echo json_encode(["status" => "success", "message" => "Skill updated successfully"]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Failed to update skill"]);
+    }
+    exit();
+}
+
+// Handle POST Request for Skill Creation
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Decode the JSON input from the request body
+    $data = json_decode(file_get_contents('php://input'), true);
+    $title = $data['title'] ?? null;
+    $description = $data['description'] ?? null;
+    $tags = $data['tags'] ?? [];
+    $hours = $data['hours'] ?? null;
+
+    // Validate required fields
+    if (!$title || !$description || !$hours || empty($tags)) {
+        echo json_encode(["status" => "error", "message" => "Title, description, hours, and tags are required"]);
+        exit();
+    }
+
+    // Check if the skill title is unique for the user
+    if (!isSkillTitleUnique($conn, $user_id, $title)) {
+        echo json_encode(["status" => "error", "message" => "Skill title already exists"]);
+        exit();
+    }
+
+    // Insert the skill into the skill table
+    $skillQuery = "INSERT INTO skill (user_id, name, description, hours) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($skillQuery);
+    if (!$stmt) {
+        echo json_encode(["status" => "error", "message" => "Database error: " . $conn->error]);
+        exit();
+    }
+    $stmt->bind_param("issi", $user_id, $title, $description, $hours);
+
+    if ($stmt->execute()) {
+        // Get the ID of the newly inserted skill
+        $skill_id = $stmt->insert_id;
+        $stmt->close();
+
+        // Insert the tags into the tag table
+        $insertTagQuery = "INSERT INTO tag (skill_id, tag) VALUES (?, ?)";
+        $stmt = $conn->prepare($insertTagQuery);
+        if (!$stmt) {
+            echo json_encode(["status" => "error", "message" => "Database error: " . $conn->error]);
+            exit();
+        }
+
+        // Insert each tag
+        foreach ($tags as $tag) {
+            $stmt->bind_param("is", $skill_id, $tag);
+            if (!$stmt->execute()) {
+                echo json_encode(["status" => "error", "message" => "Failed to insert tag: " . $stmt->error]);
+                exit();
+            }
+        }
+        $stmt->close();
+
+        echo json_encode(["status" => "success", "message" => "Skill and tags added successfully"]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Failed to insert skill: " . $stmt->error]);
+    }
+    exit();
+}
+
+// Retrieve skill_id and user_id from the query parameters
 $skill_id = isset($_GET['skill_id']) ? intval($_GET['skill_id']) : null;
 $requested_user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : null;
 
 // If no user_id is provided, default to the authenticated user
 if ($requested_user_id === null) {
-    $requested_user_id = $user_id;
+    $requested_user_id = $user_id; // Use the authenticated user's ID
 } else {
-    // Check if user_id exists
+    // Validate that the requested user_id exists in the database
     $checkUserQuery = "SELECT * FROM user WHERE user_id = ?";
     $stmt = $conn->prepare($checkUserQuery);
     $stmt->bind_param("i", $requested_user_id);
@@ -112,58 +288,18 @@ if ($requested_user_id === null) {
     }
 }
 
-// If skill_id is provided, check if it exists
+// If skill_id is provided, validate that it exists in the database
 if ($skill_id !== null) {
     $checkSkillQuery = "SELECT * FROM skill WHERE skill_id = ?";
     $stmt = $conn->prepare($checkSkillQuery);
     $stmt->bind_param("i", $skill_id);
     $stmt->execute();
     $skillResult = $stmt->get_result();
-    
+
     if ($skillResult->num_rows === 0) {
         echo json_encode(["status" => "error", "message" => "Invalid skill ID"]);
         exit();
     }
-}
-
-// Handle JSON Data from frontend for POST requests (for adding skills and tags)
-$data = json_decode(file_get_contents('php://input'), true);
-$title = $data['title'] ?? null;
-$description = $data['description'] ?? null;
-$tags = $data['tags'] ?? [];
-$hours = $data['hours'] ?? null;
-
-$response = [];
-
-if ($title && $description && $tags && $hours) {
-    // Convert the tags array to a JSON string
-    $tags_json = json_encode($tags);  // ["html", "css"] as string
-
-    // Insert the skill into the skill table
-    $skillQuery = "INSERT INTO skill (user_id, name, description, hours) VALUES (?, ?, ?, ?)";
-    $stmt = $conn->prepare($skillQuery);
-    $stmt->bind_param("issi", $user_id, $title, $description, $hours);
-
-    if ($stmt->execute()) {
-        $skill_id = $stmt->insert_id;
-        $stmt->close();
-
-        // Insert the tags JSON string into the tag table
-        $insertTagQuery = "INSERT INTO tag (skill_id, tag) VALUES (?, ?)";
-        $stmt = $conn->prepare($insertTagQuery);
-        $stmt->bind_param("is", $skill_id, $tags_json);  // Store the tags array as a JSON string
-        $stmt->execute();
-        $stmt->close();
-
-        $response["status"] = "success";
-        $response["message"] = "Skill and tags added successfully";
-    } else {
-        $response["status"] = "error";
-        $response["message"] = "Failed to insert skill";
-    }
-} else {
-    $response["status"] = "error";
-    $response["message"] = "Missing title, description, hours, or tags";
 }
 
 // Fetch skill details
@@ -194,18 +330,29 @@ if ($skillResult->num_rows > 0) {
     }
 }
 
-// Fetch user details
-$userQuery = "SELECT * FROM user WHERE user_id = ?";
-$stmt = $conn->prepare($userQuery);
-$stmt->bind_param("i", $requested_user_id); // Use the requested user_id
-$stmt->execute();
-$userResult = $stmt->get_result();
+// Extract the user_id of the skill owner
+if (!empty($skill)) {
+    $skill_owner_id = $skill[0]['user_id'];
+} else {
+    $skill_owner_id = null;
+}
 
-$user = [];
-if ($userResult->num_rows > 0) {
-    while ($row = $userResult->fetch_assoc()) {
-        $user[] = $row;
+// Fetch user details for the skill owner
+if ($skill_owner_id !== null) {
+    $userQuery = "SELECT * FROM user WHERE user_id = ?";
+    $stmt = $conn->prepare($userQuery);
+    $stmt->bind_param("i", $skill_owner_id); // Use the skill owner's user_id
+    $stmt->execute();
+    $userResult = $stmt->get_result();
+
+    $user = [];
+    if ($userResult->num_rows > 0) {
+        while ($row = $userResult->fetch_assoc()) {
+            $user[] = $row;
+        }
     }
+} else {
+    $user = [];
 }
 
 // Fetch tags associated with the skills
