@@ -7,7 +7,11 @@ class SortButton extends HTMLElement {
             { value: "title-asc", label: "Title: A to Z" },
             { value: "title-desc", label: "Title: Z to A" },
             { value: "tags-asc", label: "Tags: Ascending" },
-            { value: "tags-desc", label: "Tags: Descending" }
+            { value: "tags-desc", label: "Tags: Descending" },
+            { value: "taught_count-asc", label: "Taught Count: Ascending" }, // New option
+            { value: "taught_count-desc", label: "Taught Count: Descending" }, // New option
+            { value: "days-asc", label: "Days: Ascending" }, // New option
+            { value: "days-desc", label: "Days: Descending" } // New option
         ];
 
         // Bind event handlers
@@ -56,7 +60,7 @@ class SortButton extends HTMLElement {
 
     render() {
         this.innerHTML = `
-            <div class=" rounded-full shadow-lg min-w-60 overflow-visible relative hover:cursor-pointer">
+            <div class="rounded-full shadow-lg min-w-60 overflow-visible relative hover:cursor-pointer">
                 <div class="relative">
                     <button class="dropdown-button w-full flex items-center justify-between px-6 py-3 text-lg bg-white rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all hover:cursor-pointer">
                         <span class="flex items-center">

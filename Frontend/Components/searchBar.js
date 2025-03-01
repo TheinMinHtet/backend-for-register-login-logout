@@ -34,6 +34,60 @@ class SearchBar extends HTMLElement {
     }
   }
 
+  async fetchTags() {
+    try {
+      const url = 'http://localhost/skillSwap/skill-swap/tag.php';
+      console.log('Fetching tags from:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Tags fetched:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+      throw error;
+    }
+  }
+
+  processTags(tagsData) {
+    const uniqueTags = new Set();
+
+    tagsData.tag.forEach(tag => {
+      try {
+        // Remove extra quotes and parse the tag string
+        const cleanedTagString = tag.tag.replace(/^"|"$/g, ''); // Remove leading/trailing quotes
+        const parsedTags = JSON.parse(cleanedTagString); // Parse the cleaned string
+
+        if (Array.isArray(parsedTags)) {
+          // If it's an array, add each tag to the set
+          parsedTags.forEach(t => uniqueTags.add(t));
+        } else if (typeof parsedTags === 'string') {
+          // If it's a string, split by commas and add each tag
+          parsedTags.split(',').forEach(t => uniqueTags.add(t.trim()));
+        } else {
+          // If it's a single value, add it directly
+          uniqueTags.add(parsedTags);
+        }
+      } catch (e) {
+        // If parsing fails, treat it as a plain string and split by commas
+        const cleanedTagString = tag.tag.replace(/^"|"$/g, ''); // Remove leading/trailing quotes
+        cleanedTagString.split(',').forEach(t => uniqueTags.add(t.trim()));
+      }
+    });
+
+    return Array.from(uniqueTags);
+  }
+
   render() {
     const template = document.createElement('template');
     template.innerHTML = `
@@ -100,7 +154,7 @@ class SearchBar extends HTMLElement {
       }
     });
 
-    input.addEventListener('focus', () => {
+    input.addEventListener('focus', async () => {
       blurOverlay.classList.remove('hidden');
       availableDiv.classList.remove('hidden');
       requestAnimationFrame(() => {
@@ -108,6 +162,25 @@ class SearchBar extends HTMLElement {
         availableDiv.style.opacity = '1';
         availableDiv.style.transform = 'scale(1)';
       });
+
+      // Fetch tags from the API
+      try {
+        const tagsData = await this.fetchTags();
+        const processedTags = this.processTags(tagsData);
+        console.log('Processed tags:', processedTags);
+
+        // Update the available categories with the fetched tags
+        this.categories = processedTags.map((tag, index) => ({
+          id: String(index + 1), // Generate unique IDs
+          name: tag,
+          color: this.getRandomColor(),
+        }));
+
+        // Render the updated available categories
+        this.renderAvailableCategories();
+      } catch (error) {
+        console.error('Error handling tags:', error);
+      }
     });
 
     blurOverlay.addEventListener('click', () => {
@@ -213,8 +286,5 @@ class SearchBar extends HTMLElement {
 
 // Make sure to define the custom element before using it
 if (!customElements.get('search-bar')) {
-customElements.define('search-bar', SearchBar);
+  customElements.define('search-bar', SearchBar);
 }
-
-// Export the class for React usage
-// export default SearchBar;

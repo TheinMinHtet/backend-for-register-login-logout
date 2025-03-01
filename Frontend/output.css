@@ -1493,6 +1493,9 @@
   .gap-9 {
     gap: calc(var(--spacing) * 9);
   }
+  .gap-17 {
+    gap: calc(var(--spacing) * 17);
+  }
   .gap-\[10px\] {
     gap: 10px;
   }

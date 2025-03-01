@@ -24,7 +24,9 @@ class Profile extends HTMLElement {
 
         this.innerHTML = `
         <div class="relative group">
-            <div style="width: ${size}; height: ${size}; background: url(${img});background-size: contain;" 
+            <div style="width: ${size}; height: ${size}; background: url(${img});background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;" 
                  class="box-border bg-[url(${img})] border-4 border-[#F1F5F9] shadow-[0px_4px_4px_rgba(0,_0,_0,_0.25),_0px_4px_4px_#C4D3E0,_5px_-3px_4px_#C4D3E0] 
                         rounded-full bg-cover bg-center ${clickable !== "no" ? "cursor-pointer" : ""} 
                         hover:shadow-[0px_6px_10px_rgba(0,_0,_0,_0.25),_0px_6px_8px_#C4D3E0,_8px_-4px_6px_#C4D3E0] 
