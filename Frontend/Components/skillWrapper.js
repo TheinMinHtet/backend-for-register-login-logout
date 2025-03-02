@@ -6,6 +6,12 @@ class SkillWrapper extends HTMLElement {
         this.skills = [...this.originalSkills];
 
         this.handleSort = this.handleSort.bind(this);
+
+        this.limitWords = (text, limit) => {
+            if (!text) return "";
+            const words = text.split(/\s+/); // Ensure words are split properly
+            return words.length > limit ? words.slice(0, limit).join(" ") + " ..." : text;
+        };
     }
 
     connectedCallback() {
@@ -69,7 +75,8 @@ class SkillWrapper extends HTMLElement {
                                 tags='${JSON.stringify(skill.tags)}'
                                 days="${skill.days}"
                                 taught_count="${skill.taught_count}"
-                                img-src="${skill.user.profile}">
+                                img-src="${skill.user.profile}"
+                                userId="${skill.user.user_id}">
                             </sk-ill>
                         `).join("")}
                     </div>

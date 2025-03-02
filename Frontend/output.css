@@ -1002,8 +1002,8 @@
   .w-\[150px\] {
     width: 150px;
   }
-  .w-\[330px\] {
-    width: 330px;
+  .w-\[400px\] {
+    width: 400px;
   }
   .w-\[500px\] {
     width: 500px;
@@ -1037,6 +1037,9 @@
   }
   .min-w-\[150px\] {
     min-width: 150px;
+  }
+  .min-w-\[330px\] {
+    min-width: 330px;
   }
   .min-w-full {
     min-width: 100%;

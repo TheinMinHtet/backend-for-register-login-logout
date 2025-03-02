@@ -13,6 +13,8 @@ class Skill extends HTMLElement {
             const colors = ['#BEFBFF', '#C8FFBE', '#FFF7BE', '#FFBEC7', '#BEC7FF'];
             return colors[Math.floor(Math.random() * colors.length)];
         };
+
+
     
         const description = this.getAttribute("description") || "";
         const title = this.getAttribute("title") || "";
@@ -35,7 +37,6 @@ class Skill extends HTMLElement {
         const limitedTitle = this.limitWords(title, 5);
         const limitedDescription = this.limitWords(description, 30);
 
-        console.log("dd",limitedTitle)
     
         this.innerHTML = `  
         <div class="py-8 px-6" 
@@ -44,10 +45,10 @@ class Skill extends HTMLElement {
                 box-shadow: ${border}; border-radius: 24px; min-height: 390px;">
             <div class="flex flex-row items-center relative mb-2">
                 <h1 class="font-normal leading-[38px] text-[32px] text-[#F1F5F9] 
-                    bg-[#2F2F2F] rounded-full ps-[60px] w-[330px] py-7">
+                    bg-[#2F2F2F] rounded-full ps-[60px] min-w-[330px] w-[400px] py-7">
                     ${limitedTitle}
                 </h1>
-                <pro-file size="90px" class="absolute left-[72%]" navi="false" img-src=${imgSrc}></pro-file>
+                <pro-file size="90px" class="absolute left-[72%]" navi="false" clickable="no" img-src=${imgSrc}></pro-file>
             </div>
             <div>
                 <p class="mb-4 font-normal text-xl leading-[23px] text-[#2F2F2F] min-h-[120px]">
@@ -63,6 +64,21 @@ class Skill extends HTMLElement {
                 </p>
             </div>
         </div>`;
+    }
+
+    connectedCallback() {
+        // Wait until the element is fully rendered
+        setTimeout(() => {
+            const profileElement = this.querySelector("pro-file");
+            if (profileElement) {
+                profileElement.addEventListener("click", () => {
+                    localStorage.setItem("userIdfg",this.getAttribute("userId"));
+                    window.location.href = "../Profile/index.html"; 
+                    
+                    // Add more logic here if needed
+                });
+            }
+        }, 0);
     }
     
 }

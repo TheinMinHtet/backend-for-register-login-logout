@@ -1,5 +1,5 @@
 <?php
-header("Content-Type: application/json");
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -64,6 +64,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
     $description = trim($_POST['description'] ?? '');
     $skill_id = isset($_POST['skill_id']) ? intval($_POST['skill_id']) : null; // Allow NULL
 
+    // Debugging: Log incoming data
+    error_log("Description: " . ($_POST['description'] ?? 'NULL'));
+    error_log("Skill ID: " . ($_POST['skill_id'] ?? 'NULL'));
+    error_log("Image Name: " . ($_FILES['image']['name'] ?? 'NULL'));
+    error_log("Image Size: " . ($_FILES['image']['size'] ?? 'NULL'));
+    error_log("Image Temp Path: " . ($_FILES['image']['tmp_name'] ?? 'NULL'));
+    error_log("Image Error: " . ($_FILES['image']['error'] ?? 'NULL'));
+
     if (empty($description) || !isset($_FILES['image'])) {
         echo json_encode(["status" => "error", "message" => "Description and image are required"]);
         exit();
@@ -87,13 +95,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
         exit();
     }
 
+    // Check if skill_id exists in the skill table
+    if ($skill_id !== null) {
+        $checkSkillQuery = "SELECT skill_id FROM skill WHERE skill_id = ?";
+        $stmt = $conn->prepare($checkSkillQuery);
+        $stmt->bind_param("i", $skill_id);
+        $stmt->execute();
+        $stmt->store_result();
+
+        if ($stmt->num_rows === 0) {
+            echo json_encode(["status" => "error", "message" => "Invalid skill ID"]);
+            exit();
+        }
+    }
+
     // Insert memory
     $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($memoryQuery);
 
     // Bind parameters, allowing skill_id to be NULL
     if ($skill_id === null) {
-        $stmt->bind_param("iiss", $user_id, $skill_id, $imagePath, $description);
+        $stmt->bind_param("iiss", $user_id, null, $imagePath, $description);
     } else {
         $stmt->bind_param("iiss", $user_id, $skill_id, $imagePath, $description);
     }
@@ -146,25 +168,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     // Fetch the memory
     $memoryQuery = "SELECT * FROM memory WHERE user_id = ?";
-$stmt = $conn->prepare($memoryQuery);
-$stmt->bind_param("i", $user_id);  // Assuming user_id is an integer
-$stmt->execute();
-$memoryResult = $stmt->get_result();
+    $stmt = $conn->prepare($memoryQuery);
+    $stmt->bind_param("i", $user_id);  // Assuming user_id is an integer
+    $stmt->execute();
+    $memoryResult = $stmt->get_result();
 
-if ($memoryResult->num_rows === 0) {
-    echo json_encode(["status" => "error", "message" => "No memories found"]);
+    if ($memoryResult->num_rows === 0) {
+        echo json_encode(["status" => "error", "message" => "No memories found"]);
+        exit();
+    }
+
+    // Fetch all memories instead of a single row
+    $memories = $memoryResult->fetch_all(MYSQLI_ASSOC);
+
+    $response = [
+        "memories" => $memories,
+    ];
+
+    echo json_encode($response, JSON_PRETTY_PRINT);
     exit();
-}
-
-// Fetch all memories instead of a single row
-$memories = $memoryResult->fetch_all(MYSQLI_ASSOC);
-
-$response = [
-    "memories" => $memories,
-];
-
-echo json_encode($response, JSON_PRETTY_PRINT);
-exit();
 }
 
 // ✅ **Handle Memory Edit (Only by Owner)** 
