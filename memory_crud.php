@@ -281,19 +281,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     exit();
 }
 
-// ✅ **Handle Session Completion Logic**
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/complete_session') {
+// Function to count consecutive streak days
+function countStreakDays($timestamps, $start_time) {
+    if (empty($timestamps)) {
+        return 0;
+    }
+
+    sort($timestamps);
+    $streak_count = 1;
+    $current_day_start = $start_time;
+
+    for ($i = 1; $i < count($timestamps); $i++) {
+        $previous_day = strtotime("+" . ($streak_count) . " day", $start_time);
+        if ($timestamps[$i] >= $previous_day && $timestamps[$i] < strtotime("+1 day", $previous_day)) {
+            $streak_count++;
+        } else {
+            break; // Streak broken
+        }
+    }
+    return $streak_count;
+}
+
+// Handle POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
     $data = json_decode(file_get_contents('php://input'), true);
     $skill_id = $data['skill_id'] ?? null;
+    $user_id = $data['user_id'] ?? null;
 
-    if (!$skill_id) {
-        echo json_encode(["status" => "error", "message" => "Skill ID is required"]);
+    if (!$skill_id || !$user_id) {
+        echo json_encode(["status" => "error", "message" => "Skill ID and User ID are required"]);
         exit();
     }
 
-    // Step 1: Get Learner and Teacher from learner_teacher table
+    // Step 1: Get Session Details and Check if Session is Active
     $query = "
-        SELECT lt.learner_id, lt.teacher_id, lt.start_time, s.hours 
+        SELECT lt.user_id, lt.user_id2, lt.start_time, lt.accept, s.hours 
         FROM learner_teacher lt
         JOIN skill s ON lt.skill_id = s.skill_id
         WHERE lt.skill_id = ?
@@ -309,12 +331,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/complete_session') 
         exit();
     }
 
-    $learner_id = $session['learner_id'];
-    $teacher_id = $session['teacher_id'];
-    $start_time = strtotime($session['start_time']);
-    $total_hours = (int) $session['hours'];
+    // Check if both learner and teacher have accepted the session
+    if ($session['accept'] != 1) {
+        echo json_encode(["status" => "error", "message" => "Session is not active"]);
+        exit();
+    }
 
-    // Step 2: Get Memory Count for Learner & Teacher (Filter by Time Bound)
+    $learner_id = $session['user_id'];
+    $teacher_id = $session['user_id2'];
+    $start_time = strtotime($session['start_time']); // Start time of the session
+    $total_hours = (int) $session['hours']; // Total streak days required
+
+    // Step 2: Get Memory Count for Learner & Teacher
     $query = "SELECT user_id, created_at FROM memory WHERE skill_id = ? AND (user_id = ? OR user_id = ?) ORDER BY created_at ASC";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("iii", $skill_id, $learner_id, $teacher_id);
@@ -326,20 +354,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/complete_session') 
         $memories[$row['user_id']][] = strtotime($row['created_at']);
     }
 
-    $learner_days = countValidDays($memories[$learner_id] ?? [], $start_time);
-    $teacher_days = countValidDays($memories[$teacher_id] ?? [], $start_time);
+    $learner_timestamps = $memories[$learner_id] ?? [];
+    $teacher_timestamps = $memories[$teacher_id] ?? [];
 
-    $completed_days = min($learner_days, $teacher_days);
+    // Step 3: Calculate Streak Days for Learner and Teacher
+    $learner_streak = countStreakDays($learner_timestamps, $start_time);
+    $teacher_streak = countStreakDays($teacher_timestamps, $start_time);
 
-    // Step 3: Check if Session is Complete
-    if ($completed_days >= $total_hours) {
-        // Update user status to "completed"
+    // Step 4: Calculate Remaining Streak Days
+    $completed_streak_days = min($learner_streak, $teacher_streak);
+    $remaining_streak_days = max(0, $total_hours - $completed_streak_days);
+
+    // Step 5: Calculate Next Streak Start Time
+    $current_time = time(); // Current timestamp
+    $next_streak_start_time = $start_time + ($completed_streak_days * 24 * 3600); // Start of the next streak day
+
+    // If the next streak start time is in the past, move to the next 24-hour window
+    while ($next_streak_start_time <= $current_time) {
+        $next_streak_start_time += 24 * 3600; // Add 24 hours until it's in the future
+    }
+
+    // Format the next streak start time as a human-readable string
+    $next_streak_start_formatted = date("Y-m-d H:i:s", $next_streak_start_time);
+
+    // Step 6: Handle Session Status Based on Streaks
+    if (empty($learner_timestamps) && empty($teacher_timestamps)) {
+        // No memories uploaded yet, session is ongoing
+        $response = [
+            "status" => "success",
+            "message" => "Session ongoing (no memories uploaded yet)",
+            "learner_streak" => 0,
+            "teacher_streak" => 0,
+            "remaining_streak_days" => $remaining_streak_days,
+            "next_streak_start_time" => $next_streak_start_formatted
+        ];
+    } elseif ($learner_streak == 0 && $teacher_streak == 0 && (!empty($learner_timestamps) || !empty($teacher_timestamps))) {
+        // Both streaks are 0 and at least one memory has been uploaded in the past
+        // Streak is broken, end the session
+        $deleteQuery = "DELETE FROM learner_teacher WHERE skill_id = ?";
+        $stmt = $conn->prepare($deleteQuery);
+        $stmt->bind_param("i", $skill_id);
+        $stmt->execute();
+
+        // Send Streak Loss Notifications
+        $response = [
+            "status" => "error",
+            "message" => "Session ended due to streak loss",
+            "learner_streak" => $learner_streak,
+            "teacher_streak" => $teacher_streak,
+            "notifications" => [
+                "learner_notification" => "Your skill session for {$skill_id} has ended due to streak loss.",
+                "teacher_notification" => "Your teaching session for {$skill_id} has ended due to streak loss."
+            ]
+        ];
+    } elseif ($completed_streak_days >= $total_hours) {
+        // Session completed
         $updateQuery = "UPDATE user SET status = 'completed' WHERE user_id IN (?, ?)";
         $stmt = $conn->prepare($updateQuery);
         $stmt->bind_param("ii", $learner_id, $teacher_id);
         $stmt->execute();
 
-        // Delete session from learner_teacher table
         $deleteQuery = "DELETE FROM learner_teacher WHERE skill_id = ?";
         $stmt = $conn->prepare($deleteQuery);
         $stmt->bind_param("i", $skill_id);
@@ -355,41 +429,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/complete_session') 
             ]
         ];
     } else {
-        // Session ongoing, return streak info
+        // Session ongoing
         $response = [
             "status" => "success",
             "message" => "Session ongoing",
-            "learner_days" => $learner_days,
-            "teacher_days" => $teacher_days,
-            "remaining_hours" => $total_hours - $completed_days
+            "learner_streak" => $learner_streak,
+            "teacher_streak" => $teacher_streak,
+            "remaining_streak_days" => $remaining_streak_days,
+            "next_streak_start_time" => $next_streak_start_formatted
         ];
     }
 
     echo json_encode($response);
 }
-
-// Function to count valid days of memory streaks
-function countValidDays($timestamps, $start_time) {
-    if (empty($timestamps)) {
-        return 0;
-    }
-
-    $day_count = 0;
-    $current_day_start = $start_time;
-    $current_day_end = strtotime("+1 day", $current_day_start);
-
-    foreach ($timestamps as $timestamp) {
-        if ($timestamp < $start_time) continue;
-
-        if ($timestamp >= $current_day_start && $timestamp <= $current_day_end) {
-            continue;
-        } else {
-            $day_count++;
-            $current_day_start = strtotime("+1 day", $current_day_end);
-            $current_day_end = strtotime("+1 day", $current_day_start);
-        }
-    }
-
-    return $day_count;
-}
-?>

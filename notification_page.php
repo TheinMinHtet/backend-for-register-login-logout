@@ -49,31 +49,45 @@ $user_id = $decoded->user_id;
 
 // Handle POST request for adding a learner-teacher relationship
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
-    
     $data = json_decode(file_get_contents('php://input'), true);
-
-    $learner_id = $data['learner_id'] ?? null;
     $teacher_id = $data['teacher_id'] ?? null;
+    $learner_id = $data['learner_id'] ?? null;
     $skill_id = $data['skill_id'] ?? null;
 
-    // Validate if all required fields are provided
-    if (!$learner_id || !$teacher_id || !$skill_id) {
-        echo json_encode(["status" => "error", "message" => "Missing required fields"]);
+    // Validate required fields
+    if (!$teacher_id || !$learner_id || !$skill_id) {
+        echo json_encode(["status" => "error", "message" => "Teacher ID, Learner ID, and Skill ID are required"]);
         exit();
     }
 
-    // Insert data into the learner_teacher table
-    $insertQuery = "INSERT INTO learner_teacher (user_id, user_id2, skill_id) VALUES (?, ?, ?)";
+    // Fetch the hours for the given skill_id from the skill table
+    $query = "SELECT hours FROM skill WHERE skill_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $skill_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        echo json_encode(["status" => "error", "message" => "Skill not found"]);
+        exit();
+    }
+
+    $skill_data = $result->fetch_assoc();
+    $hours = $skill_data['hours'];
+
+    // Insert into learner_teacher table with hours from the skill table
+    $insertQuery = "INSERT INTO learner_teacher (user_id, user_id2, skill_id, hours) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($insertQuery);
-    $stmt->bind_param("iii", $teacher_id, $learner_id, $skill_id);
+    $stmt->bind_param("iiii", $teacher_id, $learner_id, $skill_id, $hours);
 
     if ($stmt->execute()) {
-        echo json_encode(["status" => "success", "message" => "Learner and teacher added successfully"]);
+        echo json_encode([
+            "status" => "success",
+            "message" => "Learner and teacher added successfully",
+        ]);
     } else {
         echo json_encode(["status" => "error", "message" => "Failed to insert data"]);
     }
-
-    $stmt->close();
 }
 
 // Handle GET request for retrieving pending requests
@@ -112,7 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // Handle POST request for accepting or denying a request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accept_request'])) {
-    
     $data = json_decode(file_get_contents('php://input'), true);
 
     $request_id = $data['request_id'] ?? null;
