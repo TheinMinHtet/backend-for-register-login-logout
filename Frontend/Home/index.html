@@ -77,8 +77,7 @@
             background: #D3E8FB;
             border-radius: 1000px;
             flex: 1;
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
+            
             width:80%;
 
         }
@@ -153,7 +152,7 @@
     <navi-gation></navi-gation>
 
     
-    <div class="min-h-[100vh] pt-[140px] flex flex-col w-full items-center gap-9">
+    <div class="min-h-[100vh] pt-[140px] flex flex-col w-full items-center gap-17" id="wrapper">
         <div class="frame">
             <div class="image-container"></div>
             <div class="w-full flex items-center gap-6">
@@ -173,7 +172,110 @@
 
     
 
-    
+    <script>
+       document.addEventListener("DOMContentLoaded", async () => {
+    const token = localStorage["JWT"];
+    if (!token) {
+        console.error("No JWT token found in localStorage.");
+        return;
+    }
+
+    try {
+        const response = await fetch("http://localhost/skillSwap/skill-swap/home_page.php", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Fetched data:", data);
+
+        if (!data.memories || data.memories.length === 0) {
+            console.warn("No memories found in response.");
+            return;
+        }
+
+        const container = document.querySelector("#wrapper");
+
+        // Clear existing content (if needed)
+        container.innerHTML = '';
+
+        data.memories.forEach(memory => {
+
+    // Create frame element
+    const frame = document.createElement("div");
+    frame.classList.add("frame");
+
+    // Image container
+    const imageContainer = document.createElement("div");
+    imageContainer.classList.add("image-container");
+    imageContainer.style.backgroundImage = `url('../../${memory.img_name}')`;
+
+    // Text and profile box container
+    const textContainer = document.createElement("div");
+    textContainer.classList.add("w-full", "flex", "items-center", "gap-6");
+
+    // Text box
+    const textBox = document.createElement("div");
+    textBox.classList.add("text-box");
+
+    const description = document.createElement("p");
+    description.textContent = memory.description;
+
+    const profileBox = document.createElement("div");
+    profileBox.classList.add("profile-box", "flex-1");
+
+    const profilePic = document.createElement("div");
+    profilePic.classList.add("profile-pic");
+
+    // Append profile pic to profile box
+    profileBox.appendChild(profilePic);
+
+    // Append text and profile to text box
+    textBox.appendChild(description);
+    textBox.appendChild(profileBox);
+
+    // Append elements to textContainer
+    textContainer.appendChild(textBox);
+
+    // Append imageContainer and textContainer to frame
+    frame.appendChild(imageContainer);
+    frame.appendChild(textContainer);
+
+    if (memory.name) {
+    const skillBox = document.createElement("div");
+    skillBox.classList.add("skill-box");
+    textContainer.appendChild(skillBox);
+
+    const text = document.createElement("p");
+    text.textContent = memory.name;
+    skillBox.appendChild(text);
+
+    // Set border radius properties with !important
+    textBox.style.setProperty("border-top-right-radius", "0", "important");
+    textBox.style.setProperty("border-bottom-right-radius", "0", "important");
+}
+
+    // Append frame to the main container
+    container.appendChild(frame);
+});
+
+
+    } catch (error) {
+        console.error("Error fetching data:", error);
+    }
+});
+
+
+    </script>
 
 </body>
+
+
 </html>
