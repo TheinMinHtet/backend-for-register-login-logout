@@ -51,14 +51,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
     // Get JSON data from the request body
     $data = json_decode(file_get_contents('php://input'), true);
     $teacher_id = $data['teacher_id'] ?? null;
-    $learner_id = $data['learner_id'] ?? null;
     $skill_id = $data['skill_id'] ?? null;
 
     // Validate required fields
-    if (!$teacher_id || !$learner_id || !$skill_id) {
-        echo json_encode(["status" => "error", "message" => "Teacher ID, Learner ID, and Skill ID are required"]);
+    if (!$teacher_id || !$skill_id) {
+        echo json_encode(["status" => "error", "message" => "Teacher ID and Skill ID are required"]);
         exit();
     }
+
+    // Use the authorized user's ID as the learner_id
+    $learner_id = $user_id;
 
     // Check if the learner has at least 10 points
     $pointsQuery = "SELECT points FROM user WHERE user_id = ?";
@@ -120,6 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
     $stmt->bind_param("iiii", $teacher_id, $learner_id, $skill_id, $hours);
 
     if ($stmt->execute()) {
+        // Retrieve the auto-generated request_id
+        $request_id = $stmt->insert_id;
+
         // Prepare notification messages
         $learner_notification = "Your request to learn '{$skill_name}' has been sent to {$teacher_name}.";
         $teacher_notification = "You have received a request from {$learner_name} to teach '{$skill_name}'.";
@@ -136,10 +141,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
         $notificationStmt->bind_param("is", $teacher_id, $teacher_notification);
         $notificationStmt->execute();
 
-        // Prepare response data with actual names and skill
+        // Prepare response data with actual names, skill, and request_id
         $response = [
             "status" => "success",
             "message" => "Request sent successfully.",
+            "request_id" => $request_id, // Include the request_id in the response
             "notifications" => [
                 "learner_notification" => $learner_notification,
                 "teacher_notification" => $teacher_notification
