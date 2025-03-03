@@ -88,19 +88,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
 
     // Step 1: Check if skill_id exists (if provided)
     if ($skill_id !== null) {
-        // Check if the user is associated with the skill (either as a learner or teacher)
         $checkSkillQuery = "
-            SELECT skill_id 
+            SELECT skill_id, accept 
             FROM learner_teacher 
             WHERE skill_id = ? AND (user_id = ? OR user_id2 = ?)
         ";
         $stmt = $conn->prepare($checkSkillQuery);
         $stmt->bind_param("iii", $skill_id, $user_id, $user_id);
         $stmt->execute();
-        $stmt->store_result();
+        $result = $stmt->get_result();
 
-        if ($stmt->num_rows === 0) {
+        if ($result->num_rows === 0) {
             echo json_encode(["status" => "error", "message" => "You are not associated with this skill"]);
+            exit();
+        }
+
+        $row = $result->fetch_assoc();
+        $accept_status = $row['accept'];
+
+        // Check if the session is active (accept = 1)
+        if ($accept_status != 1) {
+            echo json_encode(["status" => "error", "message" => "The session for this skill is not active. Memories cannot be uploaded."]);
             exit();
         }
 
