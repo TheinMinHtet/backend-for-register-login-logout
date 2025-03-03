@@ -4,7 +4,6 @@ class Profile extends HTMLElement {
         this.isActive = false;
         this.borderElement = null;
         this.render();
-        
     }
 
     render() {
@@ -13,7 +12,6 @@ class Profile extends HTMLElement {
         const imgSrc = this.getAttribute("img-src");
         const status = this.getAttribute("status") || "";
         const navi = this.getAttribute("navi") || "true";
-       
 
         const img = imgSrc ? "../../" + imgSrc : "../image/profile.jfif";
 
@@ -90,7 +88,8 @@ class Profile extends HTMLElement {
             this.borderElement.className = 'absolute -bottom-2 left-1/2 -translate-x-1/2 border-2 border-[#f1f5f9] rounded-xl opacity-0 transition-all duration-300 w-[100px] py-3 bg-[#F1F5F9]';
             this.borderElement.style.boxShadow = '8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF';
             this.borderElement.innerHTML = `
-            <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Edit Profile</p>
+            <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1" id="viewProfile">View Profile</p>
+            <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1" id="editProfile">Edit Profile</p>
             <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Log out</p>
             `;
             this.querySelector('.relative').appendChild(this.borderElement);
@@ -101,7 +100,20 @@ class Profile extends HTMLElement {
                     this.borderElement.style.transform = 'translateY(130%) scale(1.2)';
                 }
             });
-    
+
+            // Add event listeners to the menu items
+            const viewProfile = this.borderElement.querySelector('#viewProfile');
+            const editProfile = this.borderElement.querySelector('#editProfile');
+
+            viewProfile.addEventListener('click', () => {
+                window.location.href = '../Profile/index.html'; // Navigate to view profile page
+            });
+
+            editProfile.addEventListener('click', () => {
+                localStorage.setItem('isEdit',"ture");
+                window.location.href = '../Profile/edit.html'; // Navigate to edit profile page
+            });
+
             this.isActive = true;
         }
     
@@ -110,11 +122,8 @@ class Profile extends HTMLElement {
         // Prevent rapid toggling by using a delay
         setTimeout(() => {
             this.isToggling = false;
-           
-
         }, 300); // Match with transition duration
     }
-    
 
     static get observedAttributes() {
         return ['img-src', 'status', 'size', 'clickable', 'navi'];

@@ -26,6 +26,7 @@ class Information extends HTMLElement {
         }
     }
 
+
     render() {
         this.innerHTML = `
             <div class="flex flex-row flex-wrap gap-3">

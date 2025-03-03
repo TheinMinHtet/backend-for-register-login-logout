@@ -54,6 +54,7 @@ class ImageSlider extends HTMLElement {
     }
 
     render() {
+        console.log("ppp",this.profileImg)
         if (this.skills.length === 0) {
             // Display a fallback message if the skills array is empty
             this.innerHTML = `
@@ -91,11 +92,17 @@ class ImageSlider extends HTMLElement {
                             ${pair.map(skill => `
                                 <div class="w-1/2 flex justify-center">
                                     <sk-ill 
-                                        title="${skill.title}" 
+                                        title="${skill.name}" 
                                         description="${skill.description}"
-                                        color="#D3E8FB" 
+                                        tags='${JSON.stringify(skill.tags)}'
+                                        color="d3e8fb"
+                                        skillId="${skill.skill_id}"
+                                        userId="${localStorage.getItem('user_id')}"
+                                        days="${skill.hours}"
+                                taught_count="${skill.skill_taught}"
+                                        img-src="${localStorage.getItem('profileImg')}"
                                         border="-18px -18px 36px rgba(255, 255, 255, 0.25), 18px 18px 36px rgba(0, 0, 0, 0.25)"
-                                        tags='${JSON.stringify(skill.tags)}'>
+                                        >
                                     </sk-ill>
                                 </div>
                             `).join('')}

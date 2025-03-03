@@ -77,8 +77,8 @@ w duration-300`);
             this.borderElement.className = 'absolute -bottom-2 left-1/2 -translate-x-1/2 border-2 border-[#f1f5f9] rounded-xl opacity-0 transition-all duration-300 w-[100px] py-3 bg-[#F1F5F9]';
             this.borderElement.style.boxShadow = '8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF';
             this.borderElement.innerHTML = `
-                <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Edit</p>
-                <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Log out</p>
+                <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1" id="skill">Add skill</p>
+                <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1" id="memory">Add memory</p>
             `;
             container.appendChild(this.borderElement); // Append safely
 
@@ -88,6 +88,23 @@ w duration-300`);
                     this.borderElement.style.transform = 'translateY(130%) scale(1.2)';
                 }
             });
+
+            const addSkill = this.borderElement.querySelector('#skill');
+            const addMemory = this.borderElement.querySelector('#memory');
+
+            addSkill.addEventListener('click', () => {
+                localStorage.removeItem("skillDatafg");
+                localStorage.removeItem("skillIdfg");
+                window.location.href = '../Skill/index.html'; // Navigate to view profile page
+            });
+
+            addMemory.addEventListener('click', () => {
+                localStorage.removeItem("memoryDatafg");
+                localStorage.removeItem("memoryIdfg");
+                window.location.href = '../Memory/index.html'; // Navigate to edit profile page
+            });
+
+
         } else {
             this.closeMenu();
         }

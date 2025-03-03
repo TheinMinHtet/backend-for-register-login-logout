@@ -15,6 +15,7 @@ class Skill extends HTMLElement {
         };
 
 
+        
     
         const description = this.getAttribute("description") || "";
         const title = this.getAttribute("title") || "";
@@ -39,16 +40,16 @@ class Skill extends HTMLElement {
 
     
         this.innerHTML = `  
-        <div class="py-8 px-6" 
+        <div id="skiller" class="hover:cursor-pointer py-8 px-6" 
             style="display: flex; flex-direction: column; align-items: center;
                 padding: 24px; gap: 17px; width: 496px; background: ${color};
                 box-shadow: ${border}; border-radius: 24px; min-height: 390px;">
             <div class="flex flex-row items-center relative mb-2">
                 <h1 class="font-normal leading-[38px] text-[32px] text-[#F1F5F9] 
-                    bg-[#2F2F2F] rounded-full ps-[60px] min-w-[330px] w-[400px] py-7">
+                    bg-[#2F2F2F] rounded-full ps-[60px] min-w-[330px] max-w-[400px] py-7">
                     ${limitedTitle}
                 </h1>
-                <pro-file size="90px" class="absolute left-[72%]" navi="false" clickable="no" img-src=${imgSrc}></pro-file>
+                <pro-file size="90px" class="absolute left-[72%] hover:cursor-pointer" navi="false" clickable="no" img-src=${imgSrc}></pro-file>
             </div>
             <div>
                 <p class="mb-4 font-normal text-xl leading-[23px] text-[#2F2F2F] min-h-[120px]">
@@ -70,14 +71,58 @@ class Skill extends HTMLElement {
         // Wait until the element is fully rendered
         setTimeout(() => {
             const profileElement = this.querySelector("pro-file");
-            if (profileElement) {
-                profileElement.addEventListener("click", () => {
-                    localStorage.setItem("userIdfg",this.getAttribute("userId"));
-                    window.location.href = "../Profile/index.html"; 
-                    
-                    // Add more logic here if needed
-                });
-            }
+const skiller = this.querySelector("#skiller");
+
+// Debug: Check if elements exist
+console.log("profileElement:", profileElement);
+console.log("skiller:", skiller);
+
+if (profileElement) {
+    profileElement.addEventListener("click", (event) => {
+        // Debug: Log that profileElement was clicked
+        console.log("profileElement clicked");
+
+        // Prevent default behavior if needed
+        event.stopPropagation();
+
+        // Set userId in localStorage
+        localStorage.setItem("userIdfg", this.getAttribute("userId"));
+
+        // Debug: Log userId set in localStorage
+        console.log("userId set in localStorage:", this.getAttribute("userId"));
+
+        // Navigate to the profile page
+        window.location.href = "../Profile/index.html";
+
+        // Optionally, trigger the parent's click event
+        
+    });
+}
+
+if (skiller) {
+    skiller.addEventListener("click", () => {
+        // Debug: Log that skiller was clicked
+        console.log("skiller clicked");
+
+        // Set skillId and skill data in localStorage
+        localStorage.setItem("skillIdfg", this.getAttribute("skillId"));
+        let data = {
+            description: this.getAttribute("description"),
+            name: this.getAttribute("title"),
+            hours: this.getAttribute("days"),
+            skillTaught: this.getAttribute("taught_count"),
+            tags: JSON.stringify(this.getAttribute("tags")),
+            user_id: this.getAttribute("userId")
+        };
+        localStorage.setItem("skillDatafg", JSON.stringify(data));
+
+        // Debug: Log skill data set in localStorage
+        console.log("skillData set in localStorage:", data);
+
+        // Navigate to the skill page
+        window.location.href = "../Skill/index.html";
+    });
+}
         }, 0);
     }
     

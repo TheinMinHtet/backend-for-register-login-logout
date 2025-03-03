@@ -27,8 +27,8 @@ class ParaPart extends HTMLElement {
                 console.log("Parsed data:", parsedData); // Debugging
 
                 // Access the first element of the `user` array
-                if (parsedData && Array.isArray(parsedData)) {
-                    user = parsedData[0] || {};
+                if (parsedData) {
+                    user = parsedData || {};
                 }
                 console.log("User object:", user); // Debugging
             } catch (error) {

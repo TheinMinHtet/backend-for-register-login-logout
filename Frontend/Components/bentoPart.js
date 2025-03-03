@@ -26,9 +26,11 @@ class BentoPart extends HTMLElement {
                 console.log("Parsed data in BentoPart:", parsedData); // Debugging
 
                 // Extract points and infoData
-                if (Array.isArray(parsedData)) {
-                    const user = parsedData[0] || {};
+                if (parsedData) {
+                    const user = parsedData || {};
                     this.points = user.points || 0;
+                    this.skill_learnt = user.skill_learnt || 0;
+                    this.skill_taught = user.skill_taught || 0;
 
                     // Format infoData for <infor-mation>
                     this.infoData = [
@@ -49,9 +51,9 @@ class BentoPart extends HTMLElement {
         this.innerHTML = `
             <div class="w-full grid grid-cols-3 grid-rows-2 gap-x-20 gap-y-14 pb-20 px-[5%]">
                 <ra-nk class="bg-[#D3E8FB] row-span-2 rounded-[28px] py-10 flex flex-col items-center justify-between gap-8" points="${this.points}"></ra-nk>
-                <skill-learn class="bg-[#2F2F2F] h-[161px] p-8 flex justify-between items-center rounded-[28px]" number=${this.number}></skill-learn>
+                <skill-learn class="bg-[#2F2F2F] h-[161px] p-8 flex justify-between items-center rounded-[28px]" number=${this.skill_learnt}></skill-learn>
                 <infor-mation class="bg-[#D3E8FB] row-span-2 rounded-[28px] px-6 py-10" data='${JSON.stringify(this.infoData)}'></infor-mation>
-                <skill-taught class="bg-[#D3E8FB] h-[161px] p-8 flex justify-between items-center rounded-[28px]" number=${this.number2}></skill-taught>
+                <skill-taught class="bg-[#D3E8FB] h-[161px] p-8 flex justify-between items-center rounded-[28px]" number=${this.skill_taught}></skill-taught>
             </div>
         `;
     }

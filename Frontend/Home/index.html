@@ -211,6 +211,25 @@
     // Create frame element
     const frame = document.createElement("div");
     frame.classList.add("frame");
+    frame.classList.add("hover:cursor-pointer");
+
+    frame.addEventListener("click", (event) => {
+    // Prevent the event from propagating further
+    localStorage.setItem("memoryIdfg", memory.memory_id);
+        let data = {
+            description: memory.description,
+            img_name: memory.img_name,
+            user_id: memory.user_id
+        };
+        localStorage.setItem("memoryDatafg", JSON.stringify(data));
+
+        // Debug: Log skill data set in localStorage
+        console.log("skillData set in localStorage:", data);
+
+        // Navigate to the skill page
+        window.location.href = "../Memory/index.html";
+
+});
 
     // Image container
     const imageContainer = document.createElement("div");
@@ -233,6 +252,20 @@
 
     const profilePic = document.createElement("div");
     profilePic.classList.add("profile-pic");
+    profilePic.classList.add("hover:cursor-pointer")
+    profilePic.style.backgroundImage = `url('../../${memory.profile_img}')`;
+
+    profilePic.addEventListener("click", (event) => {
+    // Prevent the event from propagating further
+    event.stopPropagation();
+
+    // Do something when the profile picture is clicked
+    localStorage.setItem("userIdfg", memory.user_id);
+
+        // Navigate to the profile page
+        window.location.href = "../Profile/index.html";
+
+});
 
     // Append profile pic to profile box
     profileBox.appendChild(profilePic);
