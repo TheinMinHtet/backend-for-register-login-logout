@@ -47,8 +47,8 @@ if (!$decoded) {
 
 $user_id = $decoded->user_id;
 
-// Handle POST request for adding a learner-teacher relationship
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
+    // Get JSON data from the request body
     $data = json_decode(file_get_contents('php://input'), true);
     $teacher_id = $data['teacher_id'] ?? null;
     $learner_id = $data['learner_id'] ?? null;
@@ -60,8 +60,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
         exit();
     }
 
-    // Fetch the hours for the given skill_id from the skill table
-    $query = "SELECT hours FROM skill WHERE skill_id = ?";
+    // Check if the learner has at least 10 points
+    $pointsQuery = "SELECT points FROM user WHERE user_id = ?";
+    $stmt = $conn->prepare($pointsQuery);
+    $stmt->bind_param("i", $learner_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        echo json_encode(["status" => "error", "message" => "Learner not found"]);
+        exit();
+    }
+
+    $learner_data = $result->fetch_assoc();
+    $learner_points = $learner_data['points'];
+
+    if ($learner_points < 10) {
+        echo json_encode(["status" => "error", "message" => "Learner must have at least 10 points to request a skill"]);
+        exit();
+    }
+
+    // Fetch the hours and skill name for the given skill_id from the skill table
+    $query = "SELECT hours, name FROM skill WHERE skill_id = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $skill_id);
     $stmt->execute();
@@ -74,6 +94,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
 
     $skill_data = $result->fetch_assoc();
     $hours = $skill_data['hours'];
+    $skill_name = $skill_data['name'];
+
+    // Fetch the teacher's username for the notification message
+    $teacherNameQuery = "SELECT username FROM user WHERE user_id = ?";
+    $teacherStmt = $conn->prepare($teacherNameQuery);
+    $teacherStmt->bind_param("i", $teacher_id);
+    $teacherStmt->execute();
+    $teacherResult = $teacherStmt->get_result();
+    $teacherData = $teacherResult->fetch_assoc();
+    $teacher_name = $teacherData ? $teacherData['username'] : 'Teacher';
+
+    // Fetch the learner's username for the notification message
+    $learnerNameQuery = "SELECT username FROM user WHERE user_id = ?";
+    $learnerStmt = $conn->prepare($learnerNameQuery);
+    $learnerStmt->bind_param("i", $learner_id);
+    $learnerStmt->execute();
+    $learnerResult = $learnerStmt->get_result();
+    $learnerData = $learnerResult->fetch_assoc();
+    $learner_name = $learnerData ? $learnerData['username'] : 'Learner';
 
     // Insert into learner_teacher table with hours from the skill table
     $insertQuery = "INSERT INTO learner_teacher (user_id, user_id2, skill_id, hours) VALUES (?, ?, ?, ?)";
@@ -81,13 +120,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
     $stmt->bind_param("iiii", $teacher_id, $learner_id, $skill_id, $hours);
 
     if ($stmt->execute()) {
-        echo json_encode([
+        // Prepare notification messages
+        $learner_notification = "Your request to learn '{$skill_name}' has been sent to {$teacher_name}.";
+        $teacher_notification = "You have received a request from {$learner_name} to teach '{$skill_name}'.";
+
+        // Store notifications in the database
+        $insertNotificationQuery = "INSERT INTO notification (user_id, description) VALUES (?, ?)";
+        $notificationStmt = $conn->prepare($insertNotificationQuery);
+
+        // For the learner
+        $notificationStmt->bind_param("is", $learner_id, $learner_notification);
+        $notificationStmt->execute();
+
+        // For the teacher
+        $notificationStmt->bind_param("is", $teacher_id, $teacher_notification);
+        $notificationStmt->execute();
+
+        // Prepare response data with actual names and skill
+        $response = [
             "status" => "success",
-            "message" => "Learner and teacher added successfully",
-        ]);
+            "message" => "Request sent successfully.",
+            "notifications" => [
+                "learner_notification" => $learner_notification,
+                "teacher_notification" => $teacher_notification
+            ]
+        ];
+
+        // Send the combined response
+        echo json_encode($response);
+
     } else {
         echo json_encode(["status" => "error", "message" => "Failed to insert data"]);
     }
+
+    // Close all prepared statements
+    $stmt->close();
+    $teacherStmt->close();
+    $learnerStmt->close();
+    $notificationStmt->close();
 }
 
 // Handle GET request for retrieving pending requests
@@ -199,13 +269,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accept_request'])) {
         $skillData = $skillResult->fetch_assoc();
         $skillName = $skillData ? $skillData['name'] : 'Skill Not Found';
 
+        // Prepare notification messages
+        if ($accept) {
+            $learner_notification = "Your request to learn '{$skillName}' has been accepted by '{$teacherName}'.";
+            $teacher_notification = "You have accepted '{$learnerName}'s request to teach '{$skillName}'.";
+
+            $updateStatusQuery = "UPDATE user SET status = 'busy' WHERE user_id IN (?, ?)";
+            $statusStmt = $conn->prepare($updateStatusQuery);
+            $statusStmt->bind_param("ii", $learner_id, $teacher_id);
+            $statusStmt->execute();
+            $statusStmt->close();
+        } else {
+            $learner_notification = "Your request to learn '{$skillName}' has been denied by '{$teacherName}'.";
+            $teacher_notification = "You have denied '{$learnerName}'s request to teach '{$skillName}'.";
+
+            $updateStatusQuery = "UPDATE user SET status = 'available' WHERE user_id IN (?, ?)";
+            $statusStmt = $conn->prepare($updateStatusQuery);
+            $statusStmt->bind_param("ii", $learner_id, $teacher_id);
+            $statusStmt->execute();
+            $statusStmt->close();
+        }
+
+        // Store notifications in the database
+        $insertNotificationQuery = "INSERT INTO notification (user_id, description) VALUES (?, ?)";
+        $notificationStmt = $conn->prepare($insertNotificationQuery);
+
+        // For the learner
+        $notificationStmt->bind_param("is", $learner_id, $learner_notification);
+        $notificationStmt->execute();
+
+        // For the teacher
+        $notificationStmt->bind_param("is", $teacher_id, $teacher_notification);
+        $notificationStmt->execute();
+
         // Prepare response data with actual names and skill
         $response = [
             "status" => "success",
             "message" => $accept ? "Request accepted. Notifications sent." : "Request denied.",
             "notifications" => [
-                "learner_notification" => "Your request to learn '{$skillName}' has been accepted by '{$teacherName}'.",
-                "teacher_notification" => "You have accepted '{$learnerName}'s' request to teach '{$skillName}'."
+                "learner_notification" => $learner_notification,
+                "teacher_notification" => $teacher_notification
             ]
         ];
 
@@ -220,6 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accept_request'])) {
     $teacherStmt->close();
     $learnerStmt->close();
     $skillStmt->close();
+    $notificationStmt->close();
 }
 
 ?>

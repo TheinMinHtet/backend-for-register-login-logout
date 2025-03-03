@@ -1,5 +1,5 @@
 <?php
-header("Content-Type: application/json");
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -59,10 +59,17 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $endpoint = parse_url($request_uri, PHP_URL_PATH); // Extract the path
 $endpoint = str_replace('/skillSwap/skill-swap/memory_crud.php', '', $endpoint); // Remove the base path
 
-// ✅ **Handle Memory Upload (multipart/form-data)**
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
     $description = trim($_POST['description'] ?? '');
     $skill_id = isset($_POST['skill_id']) ? intval($_POST['skill_id']) : null; // Allow NULL
+
+    // Debugging: Log incoming data
+    error_log("Description: " . ($_POST['description'] ?? 'NULL'));
+    error_log("Skill ID: " . ($_POST['skill_id'] ?? 'NULL'));
+    error_log("Image Name: " . ($_FILES['image']['name'] ?? 'NULL'));
+    error_log("Image Size: " . ($_FILES['image']['size'] ?? 'NULL'));
+    error_log("Image Temp Path: " . ($_FILES['image']['tmp_name'] ?? 'NULL'));
+    error_log("Image Error: " . ($_FILES['image']['error'] ?? 'NULL'));
 
     if (empty($description) || !isset($_FILES['image'])) {
         echo json_encode(["status" => "error", "message" => "Description and image are required"]);
@@ -79,7 +86,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
         exit();
     }
 
-    // Upload image
+    // Step 1: Check if skill_id exists (if provided)
+    if ($skill_id !== null) {
+        // Check if the user is associated with the skill (either as a learner or teacher)
+        $checkSkillQuery = "
+            SELECT skill_id 
+            FROM learner_teacher 
+            WHERE skill_id = ? AND (user_id = ? OR user_id2 = ?)
+        ";
+        $stmt = $conn->prepare($checkSkillQuery);
+        $stmt->bind_param("iii", $skill_id, $user_id, $user_id);
+        $stmt->execute();
+        $stmt->store_result();
+
+        if ($stmt->num_rows === 0) {
+            echo json_encode(["status" => "error", "message" => "You are not associated with this skill"]);
+            exit();
+        }
+
+        // Step 2: Check if the user has already uploaded a memory for this skill today
+        $current_date = date('Y-m-d');
+        $checkUploadQuery = "SELECT COUNT(*) AS upload_count FROM memory WHERE user_id = ? AND skill_id = ? AND DATE(created_at) = ?";
+        $stmt = $conn->prepare($checkUploadQuery);
+        $stmt->bind_param("iis", $user_id, $skill_id, $current_date);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $upload_count = $row['upload_count'];
+
+        if ($upload_count >= 1) {
+            echo json_encode([
+                "status" => "error",
+                "message" => "You have already uploaded a memory for this skill today. Please wait until tomorrow."
+            ]);
+            exit();
+        }
+    }
+
+    // Step 3: Check Daily Upload Limit for skill_id = null
+    if ($skill_id === null) {
+        // Get the current date
+        $current_date = date('Y-m-d');
+
+        // Count the number of uploads with skill_id = null for the current day
+        $countQuery = "SELECT COUNT(*) AS upload_count FROM memory WHERE user_id = ? AND skill_id IS NULL AND DATE(created_at) = ?";
+        $stmt = $conn->prepare($countQuery);
+        $stmt->bind_param("is", $user_id, $current_date);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $upload_count = $row['upload_count'];
+
+        // If the user has already uploaded 3 times today, return an error
+        if ($upload_count >= 3) {
+            echo json_encode([
+                "status" => "error",
+                "message" => "You have reached the daily limit of 3 uploads without a skill. Please try again tomorrow."
+            ]);
+            exit();
+        }
+    }
+
+    // Step 4: Upload Image
     $imagePath = "uploads/memory/memory_" . $user_id . "_" . time() . "." . $fileExtension;
 
     if (!move_uploaded_file($image['tmp_name'], $imagePath)) {
@@ -87,19 +155,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
         exit();
     }
 
-    // Insert memory
+    // Step 5: Insert Memory
     $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($memoryQuery);
 
     // Bind parameters, allowing skill_id to be NULL
     if ($skill_id === null) {
-        $stmt->bind_param("iiss", $user_id, $skill_id, $imagePath, $description);
+        $null_skill_id = null; // Create a variable to hold the null value
+        $stmt->bind_param("iiss", $user_id, $null_skill_id, $imagePath, $description);
     } else {
         $stmt->bind_param("iiss", $user_id, $skill_id, $imagePath, $description);
     }
 
     if ($stmt->execute()) {
-        echo json_encode(["status" => "success", "message" => "Memory added successfully", "image" => $imagePath]);
+        // Step 6: Update User Points (if no skill_id)
+        if ($skill_id === null) {
+            $updatePointsQuery = "UPDATE user SET points = points + 2 WHERE user_id = ?";
+            $stmt = $conn->prepare($updatePointsQuery);
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+
+            // Fetch updated points
+            $fetchPointsQuery = "SELECT points FROM user WHERE user_id = ?";
+            $stmt = $conn->prepare($fetchPointsQuery);
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $stmt->bind_result($points);
+            $stmt->fetch();
+
+            echo json_encode([
+                "status" => "success",
+                "message" => "Memory added successfully. You earned 2 points!",
+                "image" => $imagePath,
+                "points" => $points
+            ]);
+        } else {
+            echo json_encode([
+                "status" => "success",
+                "message" => "Memory added successfully",
+                "image" => $imagePath
+            ]);
+        }
     } else {
         echo json_encode(["status" => "error", "message" => "Failed to insert memory"]);
     }
@@ -139,32 +235,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['memory_id'])) {
     exit();
 }
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-
-
-
     // Fetch the memory
     $memoryQuery = "SELECT * FROM memory WHERE user_id = ?";
-$stmt = $conn->prepare($memoryQuery);
-$stmt->bind_param("i", $user_id);  // Assuming user_id is an integer
-$stmt->execute();
-$memoryResult = $stmt->get_result();
+    $stmt = $conn->prepare($memoryQuery);
+    $stmt->bind_param("i", $user_id);  // Assuming user_id is an integer
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-if ($memoryResult->num_rows === 0) {
-    echo json_encode(["status" => "error", "message" => "No memories found"]);
+    // Check if any rows are returned
+    if ($result->num_rows === 0) {
+        echo json_encode(["status" => "error", "message" => "No memories found"]);
+        exit();
+    }
+
+    // Fetch all memories
+    $memories = $result->fetch_all(MYSQLI_ASSOC);
+
+    $response = [
+        "status" => "success",
+        "memories" => $memories,
+    ];
+
+    echo json_encode($response, JSON_PRETTY_PRINT);
     exit();
-}
-
-// Fetch all memories instead of a single row
-$memories = $memoryResult->fetch_all(MYSQLI_ASSOC);
-
-$response = [
-    "memories" => $memories,
-];
-
-echo json_encode($response, JSON_PRETTY_PRINT);
-exit();
 }
 
 // ✅ **Handle Memory Edit (Only by Owner)** 
@@ -218,7 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/edit') {
                 unlink($old_img_name);
             }
         }
-
+        
         // Update memory
         $updateQuery = "UPDATE memory SET description = ?, img_name = ? WHERE memory_id = ?";
         $stmt = $conn->prepare($updateQuery);
@@ -281,20 +375,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     exit();
 }
 
-// Function to count consecutive streak days
 function countStreakDays($timestamps, $start_time) {
     if (empty($timestamps)) {
         return 0;
     }
 
     sort($timestamps);
-    $streak_count = 1;
+    $streak_count = 0;
     $current_day_start = $start_time;
 
-    for ($i = 1; $i < count($timestamps); $i++) {
-        $previous_day = strtotime("+" . ($streak_count) . " day", $start_time);
-        if ($timestamps[$i] >= $previous_day && $timestamps[$i] < strtotime("+1 day", $previous_day)) {
+    foreach ($timestamps as $timestamp) {
+        // Check if the timestamp falls within the current streak day
+        if ($timestamp >= $current_day_start && $timestamp < strtotime("+1 day", $current_day_start)) {
             $streak_count++;
+            $current_day_start = strtotime("+1 day", $current_day_start); // Move to the next day
+        } elseif ($timestamp >= strtotime("+1 day", $current_day_start)) {
+            // If the timestamp skips a day, reset the streak
+            $streak_count = 1;
+            $current_day_start = strtotime("+1 day", $current_day_start);
         } else {
             break; // Streak broken
         }
@@ -304,30 +402,36 @@ function countStreakDays($timestamps, $start_time) {
 
 // Handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
+    // Parse incoming JSON data
     $data = json_decode(file_get_contents('php://input'), true);
     $skill_id = $data['skill_id'] ?? null;
-    $user_id = $data['user_id'] ?? null;
 
-    if (!$skill_id || !$user_id) {
-        echo json_encode(["status" => "error", "message" => "Skill ID and User ID are required"]);
+    // Validate required parameters
+    if (!$skill_id) {
+        echo json_encode(["status" => "error", "message" => "Skill ID is required"]);
+        exit();
+    }
+
+    // Ensure user_id is already extracted from the token (assumed to be available here)
+    if (!isset($user_id)) {
+        echo json_encode(["status" => "error", "message" => "User ID not found in token"]);
         exit();
     }
 
     // Step 1: Get Session Details and Check if Session is Active
     $query = "
-        SELECT lt.user_id, lt.user_id2, lt.start_time, lt.accept, s.hours 
+        SELECT lt.user_id, lt.user_id2, lt.start_time, lt.accept 
         FROM learner_teacher lt
-        JOIN skill s ON lt.skill_id = s.skill_id
-        WHERE lt.skill_id = ?
+        WHERE lt.skill_id = ? AND (lt.user_id = ? OR lt.user_id2 = ?)
     ";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $skill_id);
+    $stmt->bind_param("iii", $skill_id, $user_id, $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $session = $result->fetch_assoc();
 
     if (!$session) {
-        echo json_encode(["status" => "error", "message" => "No active session found"]);
+        echo json_encode(["status" => "error", "message" => "No active session found for the given Skill ID"]);
         exit();
     }
 
@@ -337,10 +441,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
         exit();
     }
 
-    $learner_id = $session['user_id'];
-    $teacher_id = $session['user_id2'];
+    // Extract session details (Corrected roles)
+    if ($session['user_id'] == $user_id) {
+        $teacher_id = $session['user_id']; // Current user is the teacher
+        $learner_id = $session['user_id2'];
+    } else {
+        $teacher_id = $session['user_id']; // The teacher is always session['user_id']
+        $learner_id = $session['user_id2']; // The learner is always session['user_id2']
+    }
+
     $start_time = strtotime($session['start_time']); // Start time of the session
-    $total_hours = (int) $session['hours']; // Total streak days required
+
+    // Fixed streak limit of 5 days
+    $total_hours = 5; // Total streak days required (fixed)
 
     // Step 2: Get Memory Count for Learner & Teacher
     $query = "SELECT user_id, created_at FROM memory WHERE skill_id = ? AND (user_id = ? OR user_id = ?) ORDER BY created_at ASC";
@@ -357,6 +470,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
     $learner_timestamps = $memories[$learner_id] ?? [];
     $teacher_timestamps = $memories[$teacher_id] ?? [];
 
+    error_log("Learner Timestamps: " . json_encode($learner_timestamps));
+    error_log("Teacher Timestamps: " . json_encode($teacher_timestamps));
+
     // Step 3: Calculate Streak Days for Learner and Teacher
     $learner_streak = countStreakDays($learner_timestamps, $start_time);
     $teacher_streak = countStreakDays($teacher_timestamps, $start_time);
@@ -365,7 +481,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
     $completed_streak_days = min($learner_streak, $teacher_streak);
     $remaining_streak_days = max(0, $total_hours - $completed_streak_days);
 
-    // Step 5: Calculate Next Streak Start Time
+    // Step 5: Adjust Points Based on Streak Completion
+    if ($completed_streak_days > 0) {
+        // Ensure learner does not lose points if they have insufficient points
+        $checkLearnerPointsQuery = "SELECT points FROM user WHERE user_id = ?";
+        $stmt = $conn->prepare($checkLearnerPointsQuery);
+        $stmt->bind_param("i", $learner_id);
+        $stmt->execute();
+        $stmt->bind_result($learner_points);
+        $stmt->fetch();
+        $stmt->close(); // Close the statement after fetching the result
+
+        if ($learner_points >= 2) {
+            // Deduct 2 points from learner
+            $updateLearnerPointsQuery = "UPDATE user SET points = points - 2 WHERE user_id = ?";
+            $stmt = $conn->prepare($updateLearnerPointsQuery);
+            $stmt->bind_param("i", $learner_id);
+            $stmt->execute();
+            $stmt->close(); // Close the statement after execution
+        }
+
+        // Add 2 points to teacher
+        $updateTeacherPointsQuery = "UPDATE user SET points = points + 2 WHERE user_id = ?";
+        $stmt = $conn->prepare($updateTeacherPointsQuery);
+        $stmt->bind_param("i", $teacher_id);
+        $stmt->execute();
+        $stmt->close(); // Close the statement after execution
+    }
+
+    // Step 6: Calculate Next Streak Start Time
     $current_time = time(); // Current timestamp
     $next_streak_start_time = $start_time + ($completed_streak_days * 24 * 3600); // Start of the next streak day
 
@@ -374,12 +518,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
         $next_streak_start_time += 24 * 3600; // Add 24 hours until it's in the future
     }
 
-    // Format the next streak start time as a human-readable string
     $next_streak_start_formatted = date("Y-m-d H:i:s", $next_streak_start_time);
 
-    // Step 6: Handle Session Status Based on Streaks
-    if (empty($learner_timestamps) && empty($teacher_timestamps)) {
-        // No memories uploaded yet, session is ongoing
+    // Step 7: Determine Session Status
+    if ($learner_streak == 0 && $teacher_streak == 0 && empty($learner_timestamps) && empty($teacher_timestamps)) {
+        // No memories uploaded yet
         $response = [
             "status" => "success",
             "message" => "Session ongoing (no memories uploaded yet)",
@@ -396,6 +539,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
         $stmt->bind_param("i", $skill_id);
         $stmt->execute();
 
+        // Store streak loss notifications in the database
+        $insertNotificationQuery = "INSERT INTO notification (user_id, description) VALUES (?, ?)";
+        $stmt = $conn->prepare($insertNotificationQuery);
+
+        // For the learner
+        $learner_notification = "Your learning session for {$skill_id} has ended due to streak loss.";
+        $stmt->bind_param("is", $learner_id, $learner_notification);
+        $stmt->execute();
+
+        // For the teacher
+        $teacher_notification = "Your teaching session for {$skill_id} has ended due to streak loss.";
+        $stmt->bind_param("is", $teacher_id, $teacher_notification);
+        $stmt->execute();
+
         // Send Streak Loss Notifications
         $response = [
             "status" => "error",
@@ -403,20 +560,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
             "learner_streak" => $learner_streak,
             "teacher_streak" => $teacher_streak,
             "notifications" => [
-                "learner_notification" => "Your skill session for {$skill_id} has ended due to streak loss.",
-                "teacher_notification" => "Your teaching session for {$skill_id} has ended due to streak loss."
+                "learner_notification" => $learner_notification,
+                "teacher_notification" => $teacher_notification
             ]
         ];
     } elseif ($completed_streak_days >= $total_hours) {
-        // Session completed
+        // Mark the session as completed for both learner and teacher
         $updateQuery = "UPDATE user SET status = 'completed' WHERE user_id IN (?, ?)";
         $stmt = $conn->prepare($updateQuery);
         $stmt->bind_param("ii", $learner_id, $teacher_id);
         $stmt->execute();
 
-        $deleteQuery = "DELETE FROM learner_teacher WHERE skill_id = ?";
-        $stmt = $conn->prepare($deleteQuery);
+        // Delete the session from the learner_teacher table
+        $deleteSessionQuery = "DELETE FROM learner_teacher WHERE skill_id = ?";
+        $stmt = $conn->prepare($deleteSessionQuery);
         $stmt->bind_param("i", $skill_id);
+        $stmt->execute();
+
+        // Delete memories for both learner and teacher
+        $deleteMemoryQuery = "DELETE FROM memory WHERE skill_id = ? AND user_id IN (?, ?)";
+        $stmt = $conn->prepare($deleteMemoryQuery);
+        $stmt->bind_param("iii", $skill_id, $learner_id, $teacher_id);
+        $stmt->execute();
+
+        // Update log table for learner and teacher
+        $logUpdateQuery = "
+            INSERT INTO log (user_id, learnt_count, taught_count)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                learnt_count = learnt_count + VALUES(learnt_count),
+                taught_count = taught_count + VALUES(taught_count)
+        ";
+        $stmt = $conn->prepare($logUpdateQuery);
+
+        // For the learner
+        $learner_learnt_increment = 1; // Increment learnt_count for the learner
+        $learner_taught_increment = 0; // Do not increment taught_count for the learner
+
+        $stmt->bind_param("iii", 
+            $learner_id, // User ID for learner
+            $learner_learnt_increment, // Increment learnt_count
+            $learner_taught_increment  // Do not increment taught_count
+        );
+        $stmt->execute();
+
+        // For the teacher
+        $teacher_learnt_increment = 0; // Do not increment learnt_count for the teacher
+        $teacher_taught_increment = 1; // Increment taught_count for the teacher
+
+        $stmt->bind_param("iii", 
+            $teacher_id, // User ID for teacher
+            $teacher_learnt_increment, // Do not increment learnt_count
+            $teacher_taught_increment  // Increment taught_count
+        );
+        $stmt->execute();
+
+        // Store session completion notifications in the database
+        $insertNotificationQuery = "INSERT INTO notification (user_id, description) VALUES (?, ?)";
+        $stmt = $conn->prepare($insertNotificationQuery);
+
+        // For the learner
+        $learner_notification = "Your learning session for {$skill_id} is completed!";
+        $stmt->bind_param("is", $learner_id, $learner_notification);
+        $stmt->execute();
+
+        // For the teacher
+        $teacher_notification = "Your teaching session for {$skill_id} is completed!";
+        $stmt->bind_param("is", $teacher_id, $teacher_notification);
         $stmt->execute();
 
         // Send Completion Notifications
@@ -424,8 +634,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
             "status" => "success",
             "message" => "Session completed",
             "notifications" => [
-                "learner_notification" => "Your skill session for {$skill_id} is completed!",
-                "teacher_notification" => "Your teaching session for {$skill_id} is completed!"
+                "learner_notification" => $learner_notification,
+                "teacher_notification" => $teacher_notification
             ]
         ];
     } else {
@@ -440,5 +650,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
         ];
     }
 
+    // Return the response as JSON
     echo json_encode($response);
 }
