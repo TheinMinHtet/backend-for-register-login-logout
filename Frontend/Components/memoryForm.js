@@ -3,9 +3,8 @@ class MemoryForm extends HTMLElement {
         super();
         this.getRandomColor = () => {
             const colors = ['#BEFBFF', '#C8FFBE', '#FFF7BE', '#FFBEC7', '#BEC7FF'];
-          return colors[Math.floor(Math.random() * colors.length)];
-    
-          };
+            return colors[Math.floor(Math.random() * colors.length)];
+        };
         this.availableTags = [
             { id: 1, text: "music", color: this.getRandomColor() },
             { id: 2, text: "law", color: this.getRandomColor() },
@@ -19,7 +18,6 @@ class MemoryForm extends HTMLElement {
         this.selectedTags = [];
     }
 
-    
     connectedCallback() {
         this.render();
         this.attachEventListeners();
@@ -34,6 +32,22 @@ class MemoryForm extends HTMLElement {
         }
     }
 
+    previewImage(event) {
+        const fileInput = event.target;
+        const previewImage = document.getElementById('previewImage');
+        const plusIcon = document.getElementById('plusIcon');
+    
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+                plusIcon.style.display = 'none'; // Hide the plus icon when an image is selected
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    }
+
     removeTag(tag) {
         if (!this.availableTags.find(t => t.id === tag.id)) {
             this.availableTags.push(tag);
@@ -43,19 +57,123 @@ class MemoryForm extends HTMLElement {
         }
     }
 
-    handleSubmit(e) {
+    async handleSubmit(e) {
         e.preventDefault();
-        const formData = {
-            title: this.querySelector('#title').value,
-            description: this.querySelector('#description').value,
-            tags: this.selectedTags
-        };
-        console.log('Form submitted:', formData);
-        // Reset form
+    
+        // Get form data
+        const description = this.querySelector('#description').value.trim();
+        const imageInput = this.querySelector('#fileInput');
+        const imageFile = imageInput.files[0];
+    
+        if (!description || !imageFile) {
+            alert('Description and image are required.');
+            return;
+        }
+    
+        // Get the selected skill_id from tags
+        const skill_id = "45";
+    
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('description', description);
+        
+       
+        if (skill_id !== null) {
+            formData.append('skill_id', skill_id);
+        }
+
+      
+        
+    
+        // Append the image file correctly
+        formData.append('image', imageFile, imageFile.name); // Add the file name as the third argument
+    
+        // Debugging: Log FormData values
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}:`, value);
+        }
+    
+        // Store in localStorage for testing
+        const formObject = {};
+        formData.forEach((value, key) => {
+            formObject[key] = value instanceof File ? value.name : value; // Store file name instead of File object
+        });
+        localStorage.setItem("test", JSON.stringify(formObject));
+    
+        // Get JWT token from localStorage
+        const token = localStorage.getItem('JWT');
+        if (!token) {
+            alert('You are not authenticated. Please log in.');
+            return;
+        }
+    
+        try {
+            // Send POST request to upload memory
+            const response = await fetch('http://localhost/skillSwap/skill-swap/memory_crud.php/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formData, // Do NOT set 'Content-Type', browser handles it automatically
+            });
+    
+            const result = await response.json();
+            if (result.status === 'success') {
+                alert('Memory uploaded successfully!');
+                this.resetForm();
+            } else {
+                alert(`Error: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('Error uploading memory:', error);
+            alert('Failed to upload memory. Please try again.');
+        }
+    }
+    
+
+    async handleDelete() {
+        // Get memory_id from localStorage (or another source)
+        const memory_id = localStorage.getItem('memory_id');
+        if (!memory_id) {
+            alert('Memory ID is required for deletion.');
+            return;
+        }
+
+        // Get JWT token from localStorage
+        const token = localStorage.getItem('JWT');
+        if (!token) {
+            alert('You are not authenticated. Please log in.');
+            return;
+        }
+
+        try {
+            // Send DELETE request to delete memory
+            const response = await fetch('http://localhost/skillSwap/skill-swap/memory_crud.php', {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `memory_id=${memory_id}`,
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                alert('Memory deleted successfully!');
+            } else {
+                alert(`Error: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('Error deleting memory:', error);
+            alert('Failed to delete memory. Please try again.');
+        }
+    }
+
+    resetForm() {
         this.querySelector('form').reset();
         this.selectedTags = [];
         this.availableTags = [
-            { id: 1, text: "music", color: "#F2FCE2" },
+            { id: 45, text: "music", color: "#F2FCE2" },
             { id: 2, text: "law", color: "#FFDEE2" },
             { id: 3, text: "tech", color: "#E5DEFF" },
             { id: 4, text: "sports", color: "#D3E4FD" },
@@ -71,6 +189,11 @@ class MemoryForm extends HTMLElement {
     attachEventListeners() {
         const form = this.querySelector('form');
         form.addEventListener('submit', (e) => this.handleSubmit(e));
+
+        const fileInput = this.querySelector('#fileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => this.previewImage(e));
+    }
 
         // Attach tag click handlers
         this.querySelectorAll('.available-tag').forEach(tag => {
@@ -88,6 +211,12 @@ class MemoryForm extends HTMLElement {
                 if (tag) this.removeTag(tag);
             });
         });
+
+        // Attach delete button click handler
+        const deleteButton = this.querySelector('.delete-button');
+        if (deleteButton) {
+            deleteButton.addEventListener('click', () => this.handleDelete());
+        }
     }
 
     render() {
@@ -95,17 +224,15 @@ class MemoryForm extends HTMLElement {
             <div class="max-w-2xl mx-auto p-8">
                 <h1 class="font-normal text-8xl leading-[112px] text-[#2F2F2F] pt-8 mb-16">Your Memory</h1>
                 <form class="space-y-6">
-
+                    <!-- Image Upload -->
                     <div class="frame">
-        
-        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-            <input type="file" id="fileInput" accept="image/*" hidden onchange="previewImage(event)">
-            <span id="plusIcon">+</span>
-            <img id="previewImage">
-        </div>
-    </div>
-                    
-
+                        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept="image/*" hidden>
+    <span id="plusIcon">+</span>
+    <img id="previewImage" src="#" alt="Preview" style="display: none; max-width: 100%; max-height: 200px;">
+</div>
+                    </div>
+    
                     <!-- Description Textarea -->
                     <div class="relative">
                         <textarea id="description" 
@@ -117,7 +244,7 @@ class MemoryForm extends HTMLElement {
                                          focus:outline-none focus:ring-2 focus:ring-blue-500/50
                                          text-gray-700 placeholder-gray-400"></textarea>
                     </div>
-
+    
                     <!-- Tags Section -->
                     <div class="space-y-4">
                         <h3 class="text-lg font-medium text-gray-700">Available Tags</h3>
@@ -132,7 +259,7 @@ class MemoryForm extends HTMLElement {
                                 </button>
                             `).join('')}
                         </div>
-
+    
                         <h3 class="text-lg font-medium text-gray-700">Selected Tags</h3>
                         <div class="flex flex-wrap gap-2">
                             ${this.selectedTags.map(tag => `
@@ -146,12 +273,11 @@ class MemoryForm extends HTMLElement {
                             `).join('')}
                         </div>
                     </div>
-
+    
                     <!-- Action Buttons -->
                     <div class="flex gap-4 justify-evenly">
-                        <but-ton class="p-4 rounded-full bg-[#91C4F2]" text="Submit" color="#91C4F2"></but-ton>
-                        <but-ton class="p-4 rounded-full bg-[#FFA9AA]" text="Delete" color="#FFA9AA" border="8px 8px 16px #FF8687, -8px -8px 16px #FEC3C3"></but-ton>
-                        
+                        <button type="submit" class="p-4 rounded-full bg-[#91C4F2]">Submit</button>
+                        <button type="button" class="delete-button p-4 rounded-full bg-[#FFA9AA]">Delete</button>
                     </div>
                 </form>
             </div>
@@ -160,27 +286,3 @@ class MemoryForm extends HTMLElement {
 }
 
 customElements.define('memory-form', MemoryForm);
-
-/* knob-elevation */
-
-/* Auto layout */
-// display: flex;
-// flex-direction: row;
-// justify-content: center;
-// align-items: center;
-// padding: 24px;
-// gap: 8px;
-
-// width: 153px;
-// height: 48px;
-
-// background: #FFA9AA;
-// box-shadow: 8px 8px 16px #FF8687, -8px -8px 16px #FEC3C3;
-// border-radius: 1e+11px;
-
-// /* Inside auto layout */
-// flex: none;
-// order: 1;
-// align-self: stretch;
-// flex-grow: 1;
-// z-index: 1;

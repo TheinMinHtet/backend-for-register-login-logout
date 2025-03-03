@@ -155,7 +155,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
         exit();
     }
 
-    // Step 5: Insert Memory
+    // Check if skill_id exists in the skill table
+    if ($skill_id !== null) {
+        $checkSkillQuery = "SELECT skill_id FROM skill WHERE skill_id = ?";
+        $stmt = $conn->prepare($checkSkillQuery);
+        $stmt->bind_param("i", $skill_id);
+        $stmt->execute();
+        $stmt->store_result();
+
+        if ($stmt->num_rows === 0) {
+            echo json_encode(["status" => "error", "message" => "Invalid skill ID"]);
+            exit();
+        }
+    }
+    // Insert memory
     $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($memoryQuery);
 
@@ -201,7 +214,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
     }
     exit();
 }
-
 // ✅ **Handle Fetching a Particular Memory**
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['memory_id'])) {
     $memory_id = intval($_GET['memory_id']);

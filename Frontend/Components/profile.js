@@ -4,6 +4,7 @@ class Profile extends HTMLElement {
         this.isActive = false;
         this.borderElement = null;
         this.render();
+        
     }
 
     render() {
@@ -12,11 +13,9 @@ class Profile extends HTMLElement {
         const imgSrc = this.getAttribute("img-src");
         const status = this.getAttribute("status") || "";
         const navi = this.getAttribute("navi") || "true";
+       
 
         const img = imgSrc ? "../../" + imgSrc : "../image/profile.jfif";
-        console.log("Image path:", img);
-        console.log("status:", status);
-        console.log("clickable:", clickable);
 
         // Determine status color and text
         const statusColor = status === "Busy" ? "#FF9800" : "#22C55E";
@@ -24,7 +23,9 @@ class Profile extends HTMLElement {
 
         this.innerHTML = `
         <div class="relative group">
-            <div style="width: ${size}; height: ${size}; background: url(${img});background-size: contain;" 
+            <div style="width: ${size}; height: ${size}; background: url(${img});background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;" 
                  class="box-border bg-[url(${img})] border-4 border-[#F1F5F9] shadow-[0px_4px_4px_rgba(0,_0,_0,_0.25),_0px_4px_4px_#C4D3E0,_5px_-3px_4px_#C4D3E0] 
                         rounded-full bg-cover bg-center ${clickable !== "no" ? "cursor-pointer" : ""} 
                         hover:shadow-[0px_6px_10px_rgba(0,_0,_0,_0.25),_0px_6px_8px_#C4D3E0,_8px_-4px_6px_#C4D3E0] 
@@ -89,7 +90,7 @@ class Profile extends HTMLElement {
             this.borderElement.className = 'absolute -bottom-2 left-1/2 -translate-x-1/2 border-2 border-[#f1f5f9] rounded-xl opacity-0 transition-all duration-300 w-[100px] py-3 bg-[#F1F5F9]';
             this.borderElement.style.boxShadow = '8px 8px 16px #C9D9E8, -8px -8px 16px #FFFFFF';
             this.borderElement.innerHTML = `
-            <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Edit</p>
+            <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Edit Profile</p>
             <p class="w-full text-[12px] hover:bg-[#dee1e5] p-1">Log out</p>
             `;
             this.querySelector('.relative').appendChild(this.borderElement);
@@ -109,6 +110,8 @@ class Profile extends HTMLElement {
         // Prevent rapid toggling by using a delay
         setTimeout(() => {
             this.isToggling = false;
+           
+
         }, 300); // Match with transition duration
     }
     

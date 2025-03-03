@@ -81,7 +81,7 @@ if (data.status === "success") {
     localStorage.setItem("JWT",data.token);
 
     
-    window.location.href = "/dashboard.html"; // Redirect to dashboard or home
+    window.location.href = "../Home/index.html"; // Redirect to dashboard or home
 } else {
     notyf.error(data.message || "Login failed!");
     alert(localStorage.getItem("password"))

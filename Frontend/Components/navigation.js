@@ -1,6 +1,7 @@
 class navigation extends HTMLElement {
     constructor() {
         super()
+        this.fetchUserProfile();
         this.innerHTML = `  
         <div class="bg-[#F1F5F9] flex flex-row w-full px-[5%] py-5 items-center gap-5 fixed z-[100]">  
         <div class="flex flex-row gap-9">
@@ -29,6 +30,51 @@ class navigation extends HTMLElement {
             
         </div>
         `
+    }
+
+    async fetchUserProfile() {
+        try {
+            // Make a GET request to the user profile API
+            const response = await fetch("http://localhost/skillSwap/skill-swap/user_profile.php", {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem("JWT"), // Corrected concatenation
+                    "Content-Type": "application/json"
+                }
+            });
+
+            // Check if the response is successful
+            if (!response.ok) {
+                throw new Error("Failed to fetch user profile");
+            }
+
+            // Parse the JSON response
+            const data = await response.json();
+
+            // Log the fetched data to the console (for debugging)
+            console.log("Fetched user profile:", data);
+
+            // Extract the `user` object from the response
+            const userData = data.user;
+
+            // Update child components with the fetched user data
+            this.updateChildComponents(userData);
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+        }
+    }
+
+    updateChildComponents(userData) {
+
+       
+
+       
+
+        // Update <image-slider> component
+        const imageSlider = this.querySelector("pro-file");
+        if (imageSlider && userData[0].profile_img) {
+            imageSlider.setAttribute("img-src", `${userData[0].profile_img}`);
+        }
     }
 }
 

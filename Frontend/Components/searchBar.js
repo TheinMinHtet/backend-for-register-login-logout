@@ -3,6 +3,7 @@ class SearchBar extends HTMLElement {
     super();
     this.selectedCategories = [];
     this.tags = []; 
+    this.token = localStorage["JWT"];
     this.getRandomColor = () => {
       const colors = ['#BEFBFF', '#C8FFBE', '#FFF7BE', '#FFBEC8', '#BEC7FF'];
       return colors[Math.floor(Math.random() * colors.length)];
@@ -21,7 +22,14 @@ class SearchBar extends HTMLElement {
       const url = `http://localhost/skillSwap/skill-swap/search_page.php?keyword=${encodeURIComponent(keyword)}&tag=${encodeURIComponent(formattedTags)}`;
       console.log('Fetching from URL:', url);
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${this.token}`
+        },
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -32,6 +40,67 @@ class SearchBar extends HTMLElement {
       console.error('Error fetching search results:', error);
       throw error;
     }
+  }
+
+  async fetchTags() {
+    try {
+      const url = 'http://localhost/skillSwap/skill-swap/tag.php';
+      console.log('Fetching tags from:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${this.token}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data || !Array.isArray(data.tag)) {
+        throw new Error('Invalid tags data received from the API');
+      }
+
+      console.log('Tags fetched:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+      throw error;
+    }
+  }
+
+  processTags(tagsData) {
+    const uniqueTags = new Set();
+
+    tagsData.tag.forEach(tag => {
+      if (!tag.tag) return; // Skip if tag.tag is null or undefined
+
+      try {
+        // Remove extra quotes and parse the tag string
+        const cleanedTagString = tag.tag.replace(/^"|"$/g, ''); // Remove leading/trailing quotes
+        const parsedTags = JSON.parse(cleanedTagString); // Parse the cleaned string
+
+        if (Array.isArray(parsedTags)) {
+          // If it's an array, add each tag to the set
+          parsedTags.forEach(t => uniqueTags.add(t));
+        } else if (typeof parsedTags === 'string') {
+          // If it's a string, split by commas and add each tag
+          parsedTags.split(',').forEach(t => uniqueTags.add(t.trim()));
+        } else {
+          // If it's a single value, add it directly
+          uniqueTags.add(parsedTags);
+        }
+      } catch (e) {
+        // If parsing fails, treat it as a plain string and split by commas
+        const cleanedTagString = tag.tag.replace(/^"|"$/g, ''); // Remove leading/trailing quotes
+        cleanedTagString.split(',').forEach(t => uniqueTags.add(t.trim()));
+      }
+    });
+
+    return Array.from(uniqueTags);
   }
 
   render() {
@@ -100,7 +169,7 @@ class SearchBar extends HTMLElement {
       }
     });
 
-    input.addEventListener('focus', () => {
+    input.addEventListener('focus', async () => {
       blurOverlay.classList.remove('hidden');
       availableDiv.classList.remove('hidden');
       requestAnimationFrame(() => {
@@ -108,6 +177,25 @@ class SearchBar extends HTMLElement {
         availableDiv.style.opacity = '1';
         availableDiv.style.transform = 'scale(1)';
       });
+
+      // Fetch tags from the API
+      try {
+        const tagsData = await this.fetchTags();
+        const processedTags = this.processTags(tagsData);
+        console.log('Processed tags:', processedTags);
+
+        // Update the available categories with the fetched tags
+        this.categories = processedTags.map((tag, index) => ({
+          id: String(index + 1), // Generate unique IDs
+          name: tag,
+          color: this.getRandomColor(),
+        }));
+
+        // Render the updated available categories
+        this.renderAvailableCategories();
+      } catch (error) {
+        console.error('Error handling tags:', error);
+      }
     });
 
     blurOverlay.addEventListener('click', () => {
@@ -165,6 +253,8 @@ class SearchBar extends HTMLElement {
 
   renderSelectedCategories() {
     const searchForDiv = this.querySelector('#searchFor');
+    if (!searchForDiv) return; // Ensure the element exists
+
     searchForDiv.innerHTML = this.selectedCategories.map(category => `
       <button
         data-id="${category.id}"
@@ -179,6 +269,7 @@ class SearchBar extends HTMLElement {
     `).join('');
 
     requestAnimationFrame(() => {
+      if (!this.isConnected) return; // Ensure the component is still connected
       searchForDiv.querySelectorAll('button').forEach(button => {
         button.style.opacity = '1';
         button.style.transform = 'scale(1)';
@@ -188,6 +279,8 @@ class SearchBar extends HTMLElement {
 
   renderAvailableCategories() {
     const availableContainer = this.querySelector('#available .flex');
+    if (!availableContainer) return; // Ensure the element exists
+
     const availableCategories = this.categories.filter(
       category => !this.selectedCategories.find(c => c.id === category.id)
     );
@@ -203,18 +296,20 @@ class SearchBar extends HTMLElement {
     `).join('');
 
     requestAnimationFrame(() => {
+      if (!this.isConnected) return; // Ensure the component is still connected
       availableContainer.querySelectorAll('button').forEach(button => {
         button.style.opacity = '1';
         button.style.transform = 'scale(1)';
       });
     });
   }
+
+  disconnectedCallback() {
+    document.removeEventListener('click', this.handleClickOutside);
+  }
 }
 
 // Make sure to define the custom element before using it
 if (!customElements.get('search-bar')) {
-customElements.define('search-bar', SearchBar);
+  customElements.define('search-bar', SearchBar);
 }
-
-// Export the class for React usage
-// export default SearchBar;
