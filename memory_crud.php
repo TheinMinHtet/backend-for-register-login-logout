@@ -110,13 +110,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
     }
 
     // Insert memory
-    $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
-    $stmt = $conn->prepare($memoryQuery);
 
     // Bind parameters, allowing skill_id to be NULL
     if ($skill_id === null) {
-        $stmt->bind_param("iiss", $user_id, null, $imagePath, $description);
+        $memoryQuery = "INSERT INTO memory (user_id, img_name, description) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($memoryQuery);
+        $stmt->bind_param("iss", $user_id, $imagePath, $description);
     } else {
+        $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
+        $stmt = $conn->prepare($memoryQuery);
         $stmt->bind_param("iiss", $user_id, $skill_id, $imagePath, $description);
     }
 

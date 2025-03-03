@@ -5,11 +5,14 @@ class navigation extends HTMLElement {
         this.innerHTML = `  
         <div class="bg-[#F1F5F9] flex flex-row w-full px-[5%] py-5 items-center gap-5 fixed z-[100]">  
         <div class="flex flex-row gap-9">
-             <rounded-icon>
+        <a href="../Home/index.html">
+            <rounded-icon>
                 <svg width="24" height="24" viewBox="0 0 47 46" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M30.3334 43.0668H34.8889C39.9208 43.0668 44 38.9245 44 33.8149V19.2609C44 16.0256 42.3358 13.0255 39.6112 11.3487L28.2223 4.33969C25.3198 2.55344 21.6803 2.55344 18.7778 4.33969L7.3889 11.3487C4.66422 13.0255 3.00008 16.0256 3.00008 19.2609V33.8149C3.00008 38.9245 7.07935 43.0668 12.1112 43.0668H16.6667M30.3334 43.0668V33.8149C30.3334 29.9826 27.2741 26.876 23.5 26.876C19.726 26.876 16.6667 29.9826 16.6667 33.8149V43.0668M30.3334 43.0668H16.6667" stroke="black" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
             </rounded-icon>
+        </a>
+             
              <rounded-icon hasList="one,two">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </rounded-icon>
@@ -72,8 +75,11 @@ class navigation extends HTMLElement {
 
         // Update <image-slider> component
         const imageSlider = this.querySelector("pro-file");
-        if (imageSlider && userData[0].profile_img) {
-            imageSlider.setAttribute("img-src", `${userData[0].profile_img}`);
+        if (imageSlider && userData.profile_img) {
+            imageSlider.setAttribute("img-src", `${userData.profile_img}`);
+            localStorage.setItem("authUser",userData.user_id);
+            localStorage.setItem("authUserData",JSON.stringify(userData));
+
         }
     }
 }

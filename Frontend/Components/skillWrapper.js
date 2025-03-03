@@ -76,7 +76,9 @@ class SkillWrapper extends HTMLElement {
                                 days="${skill.days}"
                                 taught_count="${skill.taught_count}"
                                 img-src="${skill.user.profile}"
-                                userId="${skill.user.user_id}">
+                                userId="${skill.user.user_id}"
+                                skillId="${skill.skill_id}"
+                                class="hover:cursor-pointer">
                             </sk-ill>
                         `).join("")}
                     </div>
