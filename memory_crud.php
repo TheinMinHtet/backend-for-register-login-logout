@@ -108,7 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
             exit();
         }
     }
-
     // Insert memory
     $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($memoryQuery);
@@ -127,7 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
     }
     exit();
 }
-
 // ✅ **Handle Fetching a Particular Memory**
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['memory_id'])) {
     $memory_id = intval($_GET['memory_id']);
@@ -161,17 +159,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['memory_id'])) {
     exit();
 }
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-
-
-
     // Fetch the memory
     $memoryQuery = "SELECT * FROM memory WHERE user_id = ?";
     $stmt = $conn->prepare($memoryQuery);
     $stmt->bind_param("i", $user_id);  // Assuming user_id is an integer
     $stmt->execute();
-    $memoryResult = $stmt->get_result();
+    $result = $stmt->get_result();
+    $session = $result->fetch_assoc();
 
     if ($memoryResult->num_rows === 0) {
         echo json_encode(["status" => "error", "message" => "No memories found"]);
