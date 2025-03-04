@@ -8,11 +8,13 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+
 require 'vendor/autoload.php';
 require "database_connection.php";
 define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
 
-function getTokenFromHeader() {
+function getTokenFromHeader()
+{
     $headers = getallheaders();
     foreach ($headers as $key => $value) {
         if (strtolower($key) === 'authorization') {
@@ -27,7 +29,8 @@ function getTokenFromHeader() {
     return null;
 }
 
-function verifyJWT($token) {
+function verifyJWT($token)
+{
     try {
         return JWT::decode($token, new Key(JWT_SECRET, 'HS256'));
     } catch (Exception $e) {
