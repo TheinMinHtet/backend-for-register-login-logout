@@ -95,6 +95,7 @@ w duration-300`);
             addSkill.addEventListener('click', () => {
                 localStorage.removeItem("skillDatafg");
                 localStorage.removeItem("skillIdfg");
+                localStorage.removeItem("skillTagfg");
                 window.location.href = '../Skill/index.html'; // Navigate to view profile page
             });
 

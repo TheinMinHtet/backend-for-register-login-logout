@@ -16,7 +16,7 @@ class ProfileWrapper extends HTMLElement {
     render() {
         // Render the initial HTML structure
         this.innerHTML = `
-        <style>
+         <style>
         body {
             font-family: 'Roboto Condensed', sans-serif;
             background-color: #F5F5F5;
@@ -84,7 +84,7 @@ class ProfileWrapper extends HTMLElement {
             border-radius: 1000px;
             flex: 1;
             
-            width:80%;
+            width: 70%;
 
         }
 
@@ -139,7 +139,7 @@ class ProfileWrapper extends HTMLElement {
             justify-content: space-between;
             align-items: center;
             padding: 10px;
-            width: 112px;
+            width: 612px;
             height: 69px;
             background: #CBF5D7;
             border-radius: 0px 1000px 1000px 0px;
@@ -153,32 +153,59 @@ class ProfileWrapper extends HTMLElement {
             text-align: center;
         }
     </style>
-            <div class="pt-12">
-                <profile-part></profile-part>
-                <para-part></para-part>
-                <bento-part></bento-part>
-                <div class="ms-[-6%] w-[112%] bg-[#D3E8FB] pb-[72px] mt-14">
-                    <h1 class="font-normal text-8xl leading-[112px] text-[#2F2F2F] pt-8 mb-16 ps-[5%]">Skills</h1>
-                    <image-slider></image-slider>
-                </div>
-                <h1 class="font-normal text-8xl leading-[112px] text-[#2F2F2F] mb-16">Memories</h1>
-                <div class="min-h-[100vh] pt-[140px] flex flex-col w-full items-center gap-17" id="wrapper">
-                <div class="frame">
-            <div class="image-container"></div>
-            <div class="w-full flex items-center gap-6">
-                <div class="text-box">
-                    <p>Lorem ipsum Lorem ipsum Lorem ipsum Lorem ipsum Lorem ipsum</p>
-                    <div class="profile-box flex-1">
-                        <div class="profile-pic"></div>
-                    </div>
-                </div>
-                <div class="skill-box">
-                    <p>Skill</p>
-                </div>
-            </div>
-            
+            <div class="pt-12 flex flex-col items-center">
+    <profile-part></profile-part>
+    <para-part></para-part>
+    <bento-part></bento-part>
+
+    <div class="w-full bg-[#D3E8FB] rounded-3xl pb-20 mt-14 shadow-[8px_8px_16px_#bebebe,-8px_-8px_16px_#ffffff]">
+        <h1 class="font-semibold text-7xl leading-[100px] text-[#2F2F2F] pt-12 mb-12 text-center 
+            shadow-[4px_4px_6px_#bebebe,-4px_-4px_6px_#ffffff] rounded-[32px]">
+    Skills
+</h1>
+
+        <div class="flex justify-center">
+            <image-slider class="w-5/5"></image-slider>
         </div>
+    </div>
+
+    <h1 class="font-semibold text-7xl leading-[100px] text-[#2F2F2F] mt-20 mb-12 text-center">Memories</h1>
+
+    <div class="min-h-[100vh] flex flex-col items-center gap-40 w-full px-8" id="wrapper">
+    <div class="frame bg-[#E0E0E0] rounded-3xl p-12 w-4/5 relative
+                shadow-[10px_10px_20px_#bebebe,-10px_-10px_20px_#ffffff] 
+                border-[6px] border-[#f0f0f0]">
+        
+        <!-- Decorative Box Effect -->
+        <div class="absolute top-3 left-3 w-[96%] h-[98%] rounded-2xl 
+                    border-[2px] border-[#ffffff] shadow-inner"></div>
+        
+        <div class="image-container bg-[#f0f0f0] w-full h-[300px] rounded-2xl 
+                    shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]"></div>
+        
+        <div class="w-full flex items-center gap-8 mt-8">
+            <!-- Text Box with Soft Inset Effect -->
+            <div class="text-box flex-1 p-6 bg-[#f0f0f0] rounded-xl 
+                        shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]">
+                <p class="text-lg text-[#4a4a4a]">Lorem ipsum Lorem ipsum Lorem ipsum Lorem ipsum</p>
             </div>
+
+            <!-- Profile Box (Circular with Depth) -->
+            <div class="profile-box w-[70px] h-[70px] bg-[#E0E0E0] rounded-full 
+                        shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] flex items-center justify-center">
+                <div class="profile-pic w-[60px] h-[60px] bg-[#ffffff] rounded-full shadow-inner"></div>
+            </div>
+
+            <!-- Skill Box (More Defined Container) -->
+            <div class="skill-box p-6 bg-[#f0f0f0] rounded-xl 
+                        shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]">
+                <p class="text-lg font-semibold text-[#4a4a4a]">Skill</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
     
         `;
     }
@@ -249,6 +276,7 @@ class ProfileWrapper extends HTMLElement {
 
         // Update <image-slider> component
         const imageSlider = this.querySelector("image-slider");
+        console.log(userData)
         if (imageSlider && userData.skills) {
             imageSlider.setAttribute("skills", JSON.stringify(userData.skills));
             localStorage.setItem("profileImg", userData.profile_img);
@@ -284,8 +312,12 @@ class ProfileWrapper extends HTMLElement {
             data.memories.forEach(memory => {
                 // Create frame element
                 const frame = document.createElement("div");
-                frame.classList.add("frame");
-                frame.classList.add("hover:cursor-pointer");
+                
+                frame.classList.add(
+                    "frame", "w-4/5", "rounded-3xl", "p-12", "relative",
+                    "bg-[#E0E0E0]", "shadow-[10px_10px_20px_#bebebe,-10px_-10px_20px_#ffffff]",
+                    "border-[6px]", "border-[#f0f0f0]", "hover:cursor-pointer", "transition-all", "duration-300"
+                );
 
                 frame.addEventListener("click", (event) => {
                     console.log("Frame clicked!");
@@ -308,28 +340,43 @@ class ProfileWrapper extends HTMLElement {
             
             });
 
+            const decorativeBox = document.createElement("div");
+            decorativeBox.classList.add("absolute", "top-3", "left-3", "w-[96%]", "h-[98%]",
+                "rounded-2xl", "border-[2px]", "border-[#ffffff]", "shadow-inner");
+
                 // Image container
                 const imageContainer = document.createElement("div");
-                imageContainer.classList.add("image-container");
+                imageContainer.classList.add(
+                    "image-container", "w-full", "h-[300px]", "rounded-2xl",
+                    "shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]",
+                    "bg-cover", "bg-center"
+                );
                 imageContainer.style.backgroundImage = `url('../../${memory.img_name}')`;
 
                 // Text and profile box container
                 const textContainer = document.createElement("div");
-                textContainer.classList.add("w-full", "flex", "items-center", "gap-6");
+                textContainer.classList.add("w-full", "flex", "items-center", "gap-8", "mt-8");
 
                 // Text box
                 const textBox = document.createElement("div");
-                textBox.classList.add("text-box");
+                textBox.classList.add(
+                    "text-box", "flex-1", "p-6", "rounded-xl", "bg-[#f0f0f0]",
+                    "shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]"
+                );
 
                 const description = document.createElement("p");
+                description.classList.add("text-lg", "text-[#4a4a4a]");
                 description.textContent = memory.description;
 
                 const profileBox = document.createElement("div");
-                profileBox.classList.add("profile-box", "flex-1");
+                profileBox.classList.add(
+                    "profile-box", "w-[70px]", "h-[70px]", "rounded-full",
+                    "bg-[#E0E0E0]", "shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff]",
+                    "flex", "items-center", "justify-center"
+                );
 
                 const profilePic = document.createElement("div");
-                profilePic.classList.add("profile-pic");
-                profilePic.classList.add("hover:cursor-pointer")
+                profilePic.classList.add("profile-pic", "w-[60px]", "h-[60px]", "rounded-full", "shadow-inner", "hover:cursor-pointer");
     profilePic.style.backgroundImage = `url('../../${data.profile_img}')`;
 
     profilePic.addEventListener("click", (event) => {
@@ -360,10 +407,14 @@ class ProfileWrapper extends HTMLElement {
 
                 if (memory.name) {
                     const skillBox = document.createElement("div");
-                    skillBox.classList.add("skill-box");
+                    skillBox.classList.add(
+                        "skill-box", "p-6", "bg-[#f0f0f0]", "rounded-xl",
+                        "shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]"
+                    );
                     textContainer.appendChild(skillBox);
 
                     const text = document.createElement("p");
+                    text.classList.add("text-lg", "font-semibold", "text-[#4a4a4a]");
                     text.textContent = memory.name;
                     skillBox.appendChild(text);
 

@@ -109,41 +109,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // Fetch user data for the given user_id
         $userQuery = "
             SELECT 
-                u.user_id, 
-                u.username, 
-                u.email, 
-                u.password, 
-                u.otp, 
-                u.otp_expiry, 
-                u.telegram_phone, 
-                u.telegram_username, 
-                u.created_at, 
-                u.status, 
-                u.bio, 
-                u.country, 
-                u.region, 
-                u.city, 
-                u.profile_img, 
-                u.points,
-                m.memory_id,
-                m.img_name AS memory_img, 
-                m.description AS memory_description,
-                s.skill_id,
-                s.description AS skill_description,
-                s.name AS skill_name,
-                s.hours,
-                s.taught_count AS skill_taught,
-                l.learnt_count, 
-                l.taught_count,
-                t.tag_id,
-                t.tag
-            FROM user u
-            LEFT JOIN memory m ON u.user_id = m.user_id
-            LEFT JOIN skill s ON u.user_id = s.user_id
-            LEFT JOIN tag t ON s.skill_id = t.skill_id
-            LEFT JOIN log l ON u.user_id = l.user_id
-            WHERE u.user_id = ?
-            ORDER BY u.user_id;
+    u.user_id, 
+    u.username, 
+    u.email, 
+    u.password, 
+    u.otp, 
+    u.otp_expiry, 
+    u.telegram_phone, 
+    u.telegram_username, 
+    u.created_at, 
+    u.status, 
+    u.bio, 
+    u.country, 
+    u.region, 
+    u.city, 
+    u.profile_img, 
+    u.points,
+    m.memory_id,
+    m.img_name AS memory_img, 
+    m.description AS memory_description,
+    s.skill_id,
+    s.description AS skill_description,
+    s.name AS skill_name,  -- Include skill name here
+    s.hours,
+    s.taught_count AS skill_taught,
+    l.learnt_count, 
+    l.taught_count,
+    t.tag_id,
+    t.tag
+FROM user u
+LEFT JOIN memory m ON u.user_id = m.user_id
+LEFT JOIN skill s ON u.user_id = s.user_id  -- Direct join with skill table
+LEFT JOIN tag t ON s.skill_id = t.skill_id
+LEFT JOIN log l ON u.user_id = l.user_id
+WHERE u.user_id = ?
+ORDER BY u.user_id;
+
         ";
 
         $stmt = $conn->prepare($userQuery);
@@ -191,7 +192,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $memories[] = [
                     "memory_id" => $row["memory_id"],
                     "img_name" => $row["memory_img"],
-                    "description" => $row["memory_description"]
+                    "description" => $row["memory_description"],
+                    "name" => $row["skill_name"] // Include skill name
                 ];
             }
 
@@ -327,41 +329,42 @@ if (empty($updates)) {
     // If no changes are detected, fetch the user data and return it
     $userQuery = "
         SELECT 
-            u.user_id, 
-            u.username, 
-            u.email, 
-            u.password, 
-            u.otp, 
-            u.otp_expiry, 
-            u.telegram_phone, 
-            u.telegram_username, 
-            u.created_at, 
-            u.status, 
-            u.bio, 
-            u.country, 
-            u.region, 
-            u.city, 
-            u.profile_img, 
-            u.points,
-            m.memory_id,
-            m.img_name AS memory_img, 
-            m.description AS memory_description,
-            s.skill_id,
-            s.description AS skill_description,
-            s.name AS skill_name,
-            s.hours,
-            s.taught_count AS skill_taught,
-            l.learnt_count, 
-            l.taught_count,
-            t.tag_id,
-            t.tag
-        FROM user u
-        LEFT JOIN memory m ON u.user_id = m.user_id
-        LEFT JOIN skill s ON u.user_id = s.user_id
-        LEFT JOIN tag t ON s.skill_id = t.skill_id
-        LEFT JOIN log l ON u.user_id = l.user_id
-        WHERE u.user_id = ?
-        ORDER BY u.user_id;
+    u.user_id, 
+    u.username, 
+    u.email, 
+    u.password, 
+    u.otp, 
+    u.otp_expiry, 
+    u.telegram_phone, 
+    u.telegram_username, 
+    u.created_at, 
+    u.status, 
+    u.bio, 
+    u.country, 
+    u.region, 
+    u.city, 
+    u.profile_img, 
+    u.points,
+    m.memory_id,
+    m.img_name AS memory_img, 
+    m.description AS memory_description,
+    s.skill_id,
+    s.description AS skill_description,
+    s.name AS skill_name,  -- Include skill name here
+    s.hours,
+    s.taught_count AS skill_taught,
+    l.learnt_count, 
+    l.taught_count,
+    t.tag_id,
+    t.tag
+FROM user u
+LEFT JOIN memory m ON u.user_id = m.user_id
+LEFT JOIN skill s ON u.user_id = s.user_id  -- Direct join with skill table
+LEFT JOIN tag t ON s.skill_id = t.skill_id
+LEFT JOIN log l ON u.user_id = l.user_id
+WHERE u.user_id = ?
+ORDER BY u.user_id;
+
     ";
 
     $stmt = $conn->prepare($userQuery);
@@ -409,7 +412,8 @@ if (empty($updates)) {
             $memories[] = [
                 "memory_id" => $row["memory_id"],
                 "img_name" => $row["memory_img"],
-                "description" => $row["memory_description"]
+                "description" => $row["memory_description"],
+                "name" => $row["skill_name"] // Include skill name
             ];
         }
 
@@ -476,42 +480,43 @@ if (empty($updates)) {
     if ($stmt->execute()) {
         // Fetch updated user data
         $userQuery = "
-            SELECT 
-                u.user_id, 
-                u.username, 
-                u.email, 
-                u.password, 
-                u.otp, 
-                u.otp_expiry, 
-                u.telegram_phone, 
-                u.telegram_username, 
-                u.created_at, 
-                u.status, 
-                u.bio, 
-                u.country, 
-                u.region, 
-                u.city, 
-                u.profile_img, 
-                u.points,
-                m.memory_id
-                m.img_name AS memory_img, 
-                m.description AS memory_description,
-                s.skill_id,
-                s.description AS skill_description,
-                s.name AS skill_name,
-                s.hours,
-                s.taught_count AS skill_taught,
-                l.learnt_count, 
-                l.taught_count,
-                t.tag_id,
-                t.tag
-            FROM user u
-            LEFT JOIN memory m ON u.user_id = m.user_id
-            LEFT JOIN skill s ON u.user_id = s.user_id
-            LEFT JOIN tag t ON s.skill_id = t.skill_id
-            LEFT JOIN log l ON u.user_id = l.user_id
-            WHERE u.user_id = ?
-            ORDER BY u.user_id;
+           SELECT 
+    u.user_id, 
+    u.username, 
+    u.email, 
+    u.password, 
+    u.otp, 
+    u.otp_expiry, 
+    u.telegram_phone, 
+    u.telegram_username, 
+    u.created_at, 
+    u.status, 
+    u.bio, 
+    u.country, 
+    u.region, 
+    u.city, 
+    u.profile_img, 
+    u.points,
+    m.memory_id,
+    m.img_name AS memory_img, 
+    m.description AS memory_description,
+    s.skill_id,
+    s.description AS skill_description,
+    s.name AS skill_name,  -- Include skill name here
+    s.hours,
+    s.taught_count AS skill_taught,
+    l.learnt_count, 
+    l.taught_count,
+    t.tag_id,
+    t.tag
+FROM user u
+LEFT JOIN memory m ON u.user_id = m.user_id
+LEFT JOIN skill s ON u.user_id = s.user_id  -- Direct join with skill table
+LEFT JOIN tag t ON s.skill_id = t.skill_id
+LEFT JOIN log l ON u.user_id = l.user_id
+WHERE u.user_id = ?
+ORDER BY u.user_id;
+
         ";
 
         $stmt = $conn->prepare($userQuery);
@@ -559,7 +564,8 @@ if (empty($updates)) {
                 $memories[] = [
                     "memory_id" => $row["memory_id"],
                     "img_name" => $row["memory_img"],
-                    "description" => $row["memory_description"]
+                    "description" => $row["memory_description"],
+                    "name" => $row["skill_name"] // Include skill name
                 ];
             }
 

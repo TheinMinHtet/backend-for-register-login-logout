@@ -71,7 +71,7 @@ class ImageSlider extends HTMLElement {
         });
 
         this.innerHTML = `
-            <div class="relative w-full h-[530px] overflow-hidden group pt-16 ps-8">
+            <div class="relative w-full h-[600px] overflow-hidden group pt-16 ps-8">
                 <!-- Navigation Buttons -->
                 <button class="prev-btn absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all opacity-0 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

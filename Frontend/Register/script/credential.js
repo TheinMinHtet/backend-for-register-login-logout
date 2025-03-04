@@ -94,7 +94,7 @@ import config from '../../config.js';
                 window.location.href = "./OTP-Code.html"; // Change this to your next page
             }, 1500);
         } else {
-            notyf.error(data.message || "Registration failed!");
+            notyf.error(data.error || "Registration failed!");
         }
     })
     .catch(error => {

@@ -59,6 +59,8 @@ class navigation extends HTMLElement {
 
             // Extract the `user` object from the response
             const userData = data.user;
+            localStorage.setItem("authUser",userData.user_id);
+            localStorage.setItem("authUserData",JSON.stringify(userData));
 
             // Update child components with the fetched user data
             this.updateChildComponents(userData);
@@ -77,8 +79,7 @@ class navigation extends HTMLElement {
         const imageSlider = this.querySelector("pro-file");
         if (imageSlider && userData.profile_img) {
             imageSlider.setAttribute("img-src", `${userData.profile_img}`);
-            localStorage.setItem("authUser",userData.user_id);
-            localStorage.setItem("authUserData",JSON.stringify(userData));
+            
 
         }
     }
