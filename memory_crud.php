@@ -586,7 +586,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
         ];
     } elseif ($completed_streak_days >= $total_hours) {
         // Mark the session as completed for both learner and teacher
-        $updateQuery = "UPDATE user SET status = 'completed' WHERE user_id IN (?, ?)";
+        $updateQuery = "UPDATE user SET status = 'available' WHERE user_id IN (?, ?)";
         $stmt = $conn->prepare($updateQuery);
         $stmt->bind_param("ii", $learner_id, $teacher_id);
         $stmt->execute();
