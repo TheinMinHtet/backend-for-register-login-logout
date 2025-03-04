@@ -218,7 +218,6 @@ class ProfileWrapper extends HTMLElement {
             let url;
             if(id) {
                 url = "http://localhost/skillSwap/skill-swap/user_profile.php/"+id;
-                localStorage.removeItem("userIdfg");
             } else {
                 url = "http://localhost/skillSwap/skill-swap/user_profile.php";
 
@@ -284,7 +283,7 @@ class ProfileWrapper extends HTMLElement {
         }
     }
 
-    fetchMemories() {
+    async fetchMemories() {
         const token = localStorage.getItem("JWT");
         if (!token) {
             console.error("No JWT token found in localStorage.");
@@ -292,12 +291,28 @@ class ProfileWrapper extends HTMLElement {
         }
 
         try {
-            
+            let id = localStorage.getItem('userIdfg');
+            let url = "http://localhost/skillSwap/skill-swap/home_page.php/user?user_id="+id;
+
+           
+            const response = await fetch(url,{
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
 
             
 
-            const data = this.forMemories;
-            console.log("Fetched memories:", data);
+        
+           
 
             if (!data.memories || data.memories.length === 0) {
                 console.warn("No memories found in response.");
@@ -377,7 +392,7 @@ class ProfileWrapper extends HTMLElement {
 
                 const profilePic = document.createElement("div");
                 profilePic.classList.add("profile-pic", "w-[60px]", "h-[60px]", "rounded-full", "shadow-inner", "hover:cursor-pointer");
-    profilePic.style.backgroundImage = `url('../../${data.profile_img}')`;
+    profilePic.style.backgroundImage = `url('../../${memory.profile_img}')`;
 
     profilePic.addEventListener("click", (event) => {
     // Prevent the event from propagating further

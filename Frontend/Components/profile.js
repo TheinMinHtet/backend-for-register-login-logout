@@ -107,6 +107,8 @@ class Profile extends HTMLElement {
             const logout = this.borderElement.querySelector('#logout');
 
             viewProfile.addEventListener('click', () => {
+                let user = localStorage.getItem('authUser');
+                localStorage.setItem('userIdfg',user)
                 window.location.href = '../Profile/index.html'; // Navigate to view profile page
             });
 

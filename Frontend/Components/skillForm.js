@@ -80,6 +80,7 @@ class SkillForm extends HTMLElement {
 
             if (response.status === "success") {
                 notyf.success(result.message || 'Skill added successfully!');
+                window.location.href = '../Home/index.html';
                 
             } else {
                 notyf.success(result.message || 'An error occurred.');
@@ -116,6 +117,11 @@ class SkillForm extends HTMLElement {
     // Validate required fields
     if (!title || !description || !days || this.selectedTags.length === 0) {
         notyf.error('All fields are required!');
+        return;
+    }
+
+    if (title.length > 10) {
+        notyf.error('title should be less than 10 characters');
         return;
     }
 
@@ -351,7 +357,7 @@ class SkillForm extends HTMLElement {
                     ${this.owned ? '<but-ton class="p-4 rounded-full bg-[#91C4F2]" text="Submit" color="#91C4F2"></but-ton>': '<but-ton class="p-4 rounded-full bg-[#91C4F2]" text="Request" color="#91C4F2"></but-ton>'}
                         
 
-                        ${this.owned ? '<but-ton id="delete" class="p-4 rounded-full bg-[#FFA9AA]" text="Delete" color="#FFA9AA" border="8px 8px 16px #FF8687, -8px -8px 16px #FEC3C3"></but-ton>': ""}
+                        ${(this.owned && (Object.keys(skillData).length !== 0))  ? '<but-ton id="delete" class="p-4 rounded-full bg-[#FFA9AA]" text="Delete" color="#FFA9AA" border="8px 8px 16px #FF8687, -8px -8px 16px #FEC3C3"></but-ton>': ""}
                         
                     </div>
                 </form>

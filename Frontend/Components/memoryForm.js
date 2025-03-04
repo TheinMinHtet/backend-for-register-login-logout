@@ -106,6 +106,7 @@ class MemoryForm extends HTMLElement {
 
     async handleSubmit(e) {
         e.preventDefault();
+        const notyf = new Notyf();
     
         // Get form data
         const descriptionInput = this.querySelector('#description');
@@ -120,8 +121,8 @@ const imageFile = imageInput.files[0];
 let img_name = memoryDat.img_name || "";
 const description = (memoryDat.description?.trim() || descriptionInput?.value.trim()) || "";
     
-        if (!description || !imageFile) {
-            alert('Description and image are required.');
+        if (!description) {
+            notyf.error('Description and image are required.');
             return;
         }
     
@@ -157,7 +158,7 @@ const description = (memoryDat.description?.trim() || descriptionInput?.value.tr
         // Get JWT token from localStorage
         const token = localStorage.getItem('JWT');
         if (!token) {
-            alert('You are not authenticated. Please log in.');
+            notyf.error('You are not authenticated. Please log in.');
             return;
         }
     
@@ -185,30 +186,32 @@ const description = (memoryDat.description?.trim() || descriptionInput?.value.tr
             
             const result = await response.json();
             if (result.status === 'success') {
-                alert('Memory uploaded successfully!');
+                notyf.success('Memory uploaded successfully!');
                 this.resetForm();
+                window.location.href = '../Home/index.html';
             } else {
-                alert(`Error: ${result.message}`);
+                notyf.error(`Error: ${result.message}`);
             }
         } catch (error) {
             console.error('Error uploading memory:', error);
-            alert('Failed to upload memory. Please try again.');
+            notyf.error('Failed to upload memory. Please try again.');
         }
     }
     
 
     async handleDelete() {
         // Get memory_id from localStorage (or another source)
+        const notyf = new Notyf();
         const memory_id = localStorage.getItem('memoryIdfg');
         if (!memory_id) {
-            alert('Memory ID is required for deletion.');
+            notyf.error('Memory ID is required for deletion.');
             return;
         }
 
         // Get JWT token from localStorage
         const token = localStorage.getItem('JWT');
         if (!token) {
-            alert('You are not authenticated. Please log in.');
+            noftyf.error('You are not authenticated. Please log in.');
             return;
         }
 
@@ -225,13 +228,14 @@ const description = (memoryDat.description?.trim() || descriptionInput?.value.tr
 
             const result = await response.json();
             if (result.status === 'success') {
-                alert('Memory deleted successfully!');
+                notyf.success('Memory deleted successfully!');
+                window.location.href = '../Home/index.html';
             } else {
-                alert(`Error: ${result.message}`);
+                notyf.error(`Error: ${result.message}`);
             }
         } catch (error) {
             console.error('Error deleting memory:', error);
-            alert('Failed to delete memory. Please try again.');
+            notyf.error('Failed to delete memory. Please try again.');
         }
     }
 
@@ -329,7 +333,7 @@ let description = memoryData.description || "";
                                   class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
                                          focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                                         text-gray-700 placeholder-gray-400" ${!this.owned ? 'disabled' : ''}> 
+                                         text-gray-700 placeholder-gray-400" ${!this.owned ? 'disabled' : ''}>${description} 
                                          </textarea>
                     </div>
     
@@ -369,7 +373,7 @@ let description = memoryData.description || "";
                     <div class="flex gap-4 justify-evenly">
                    
                         ${this.owned ? '<but-ton type="submit" class="p-4 rounded-full bg-[#91C4F2]" text="Submit" color="#91C4F2"></but-ton>': ''}
-                        ${this.owned ? '<but-ton type="button" class="delete-button p-4 rounded-full bg-[#FFA9AA]"  text="Delete" color="#FFA9AA" border="8px 8px 16px #FF8687, -8px -8px 16px #FEC3C3"></but-ton>' : ''}
+                        ${(this.owned && (Object.keys(memoryData).length !== 0 )) ? '<but-ton type="button" class="delete-button p-4 rounded-full bg-[#FFA9AA]"  text="Delete" color="#FFA9AA" border="8px 8px 16px #FF8687, -8px -8px 16px #FEC3C3"></but-ton>' : ''}
                     </div>
                 </form>
             </div>
