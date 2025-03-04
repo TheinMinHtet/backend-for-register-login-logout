@@ -166,20 +166,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
     $notificationStmt->close();
 }
 
-// Handle GET request for retrieving pending requests
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Get user_id from query params
-    $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
 
-    if (!$user_id) {
-        echo json_encode(["status" => "error", "message" => "User ID is missing"]);
+    if (isset($_GET['noti_info'])) {
+        // Get user_id from query params if provided
+        $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
+
+        if ($user_id) {
+            // Fetch notifications for a specific user
+            $query = "SELECT * FROM notification WHERE user_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $user_id);
+        } else {
+            // Fetch all notifications if no user_id is provided
+            $query = "SELECT * FROM notification";
+            $stmt = $conn->prepare($query);
+        }
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $notifications = [];
+        while ($row = $result->fetch_assoc()) {
+            $notifications[] = $row;
+        }
+
+        $stmt->close();
+        $conn->close();
+
+        if (!empty($notifications)) {
+            echo json_encode(["status" => "success", "notifications" => $notifications]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "No notifications found"]);
+        }
         exit();
     }
 
-    // Query to fetch the pending requests for the teacher (accept = false)
-    $query = "SELECT * FROM learner_teacher WHERE user_id = ? AND accept = false";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $user_id);
+    $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
+
+    if ($user_id) {
+        // Fetch pending requests for a specific user
+        $query = "SELECT * FROM learner_teacher WHERE user_id = ? AND accept = false";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $user_id);
+    } else {
+        // Fetch all pending requests for all users
+        $query = "SELECT * FROM learner_teacher WHERE accept = false";
+        $stmt = $conn->prepare($query);
+    }
+
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -193,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $conn->close();
 
     // Return the pending requests
-    if (count($pendingRequests) > 0) {
+    if (!empty($pendingRequests)) {
         echo json_encode(["status" => "success", "pending_requests" => $pendingRequests]);
     } else {
         echo json_encode(["status" => "error", "message" => "No pending requests found"]);
