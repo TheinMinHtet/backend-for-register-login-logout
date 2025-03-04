@@ -189,6 +189,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
         $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
         $stmt = $conn->prepare($memoryQuery);
 
+// =======
+//         $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
+//         $stmt = $conn->prepare($memoryQuery);
+// >>>>>>> 33998cbc3132ebdc047f99633f4e94ddb4e00d32
         $null_skill_id = null; // Create a variable to hold the null value
         $stmt->bind_param("iiss", $user_id, $null_skill_id, $imagePath, $description);
     } else {
@@ -596,7 +600,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
         ];
     } elseif ($completed_streak_days >= $total_hours) {
         // Mark the session as completed for both learner and teacher
-        $updateQuery = "UPDATE user SET status = 'completed' WHERE user_id IN (?, ?)";
+        $updateQuery = "UPDATE user SET status = 'available' WHERE user_id IN (?, ?)";
         $stmt = $conn->prepare($updateQuery);
         $stmt->bind_param("ii", $learner_id, $teacher_id);
         $stmt->execute();
