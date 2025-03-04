@@ -5,6 +5,7 @@ class MemoryForm extends HTMLElement {
             const colors = ['#BEFBFF', '#C8FFBE', '#FFF7BE', '#FFBEC7', '#BEC7FF'];
             return colors[Math.floor(Math.random() * colors.length)];
         };
+        this.owned = false;
         this.availableTags = [
             { id: 1, text: "music", color: this.getRandomColor() },
             { id: 2, text: "law", color: this.getRandomColor() },
@@ -21,6 +22,47 @@ class MemoryForm extends HTMLElement {
     connectedCallback() {
         this.render();
         this.attachEventListeners();
+        this.fetchSkills();
+    }
+
+    async fetchSkills() {
+        const token = localStorage.getItem('JWT');
+        if (!token) {
+            console.error('No JWT token found in localStorage.');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost/skillSwap/skill-swap/skill_crud.php', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch skills');
+            }
+
+            const data = await response.json();
+
+            // Extract the skills array from the response
+            const skills = data.skill;
+
+            // Map skills to availableTags
+            this.availableTags = skills.map(skill => ({
+                id: skill.skill_id, // Use skill_id as the id
+                text: skill.name,   // Use skill name as the text
+                color: this.getRandomColor(), // Assign a random color
+            }));
+
+            // Re-render the component to reflect the updated tags
+            this.render();
+            this.attachEventListeners();
+        } catch (error) {
+            console.error('Error fetching skills:', error);
+        }
     }
 
     addTag(tag) {
@@ -64,6 +106,7 @@ class MemoryForm extends HTMLElement {
         const description = this.querySelector('#description').value.trim();
         const imageInput = this.querySelector('#fileInput');
         const imageFile = imageInput.files[0];
+        const skill_id = null;
     
         if (!description || !imageFile) {
             alert('Description and image are required.');
@@ -71,7 +114,6 @@ class MemoryForm extends HTMLElement {
         }
     
         // Get the selected skill_id from tags
-        const skill_id = "45";
     
         // Prepare form data
         const formData = new FormData();
@@ -79,7 +121,7 @@ class MemoryForm extends HTMLElement {
         
        
         if (skill_id !== null) {
-            formData.append('skill_id', skill_id);
+            formData.append('skill_id', 45);
         }
 
       
@@ -106,17 +148,31 @@ class MemoryForm extends HTMLElement {
             alert('You are not authenticated. Please log in.');
             return;
         }
+
+        const authUser = localStorage.getItem("authUser");
+        const memoryId = localStorage.getItem("memoryIdfg")
+        const memoryData = JSON.parse(localStorage.getItem("memoryDatafg")) || {};
+        let method = 'POST';
+        let url = 'http://localhost/skillSwap/skill-swap/memory_crud.php/upload';
+
+        if(memoryData && authUser == memoryData.user_id) {
+            url = url = 'http://localhost/skillSwap/skill-swap/memory_crud.php/edit';
+        
+            formData.append('memory_id',memoryId)
+            alert('hi')
+
+        }
     
-        try {
+    try {
             // Send POST request to upload memory
-            const response = await fetch('http://localhost/skillSwap/skill-swap/memory_crud.php/upload', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
                 body: formData, // Do NOT set 'Content-Type', browser handles it automatically
             });
-    
+            
             const result = await response.json();
             if (result.status === 'success') {
                 alert('Memory uploaded successfully!');
@@ -220,6 +276,25 @@ class MemoryForm extends HTMLElement {
     }
 
     render() {
+        const memoryId = localStorage.getItem("memoryIdfg");
+        const authUser = localStorage.getItem("authUser");
+        const memoryData = JSON.parse(localStorage.getItem("memoryDatafg")) || {};
+        let img_name,description = "";
+
+        
+        if(memoryData) {
+            img_name = memoryData.img_name;
+            description = memoryData.description;
+
+            
+
+        };
+
+        if(authUser == memoryData.user_id) {
+            this.owned = true;
+
+        };
+
         this.innerHTML = `
             <div class="max-w-2xl mx-auto p-8">
                 <h1 class="font-normal text-8xl leading-[112px] text-[#2F2F2F] pt-8 mb-16">Your Memory</h1>
@@ -227,9 +302,9 @@ class MemoryForm extends HTMLElement {
                     <!-- Image Upload -->
                     <div class="frame">
                         <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-    <input type="file" id="fileInput" accept="image/*" hidden>
-    <span id="plusIcon">+</span>
-    <img id="previewImage" src="#" alt="Preview" style="display: none; max-width: 100%; max-height: 200px;">
+    <input type="file" id="fileInput" accept="image/*" hidden ${!this.owned ? 'disabled' : '  '}>
+    <span id="plusIcon" style="display: ${img_name ? 'none': 'block'}">+</span>
+    <img id="previewImage" src="../../${img_name}" alt="Preview" style="display: ${img_name ? 'block' : 'none'}; max-width: 100%; max-height: 411px;">
 </div>
                     </div>
     
@@ -242,11 +317,13 @@ class MemoryForm extends HTMLElement {
                                   class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
                                          focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                                         text-gray-700 placeholder-gray-400"></textarea>
+                                         text-gray-700 placeholder-gray-400" ${!this.owned ? 'disabled' : ''}>
+                                         ${description}</textarea>
                     </div>
     
                     <!-- Tags Section -->
                     <div class="space-y-4">
+                    ${this.owned ? `
                         <h3 class="text-lg font-medium text-gray-700">Available Tags</h3>
                         <div class="flex flex-wrap gap-2">
                             ${this.availableTags.map(tag => `
@@ -259,6 +336,8 @@ class MemoryForm extends HTMLElement {
                                 </button>
                             `).join('')}
                         </div>
+                        `: ``}
+                        
     
                         <h3 class="text-lg font-medium text-gray-700">Selected Tags</h3>
                         <div class="flex flex-wrap gap-2">
@@ -277,7 +356,7 @@ class MemoryForm extends HTMLElement {
                     <!-- Action Buttons -->
                     <div class="flex gap-4 justify-evenly">
                         <button type="submit" class="p-4 rounded-full bg-[#91C4F2]">Submit</button>
-                        <button type="button" class="delete-button p-4 rounded-full bg-[#FFA9AA]">Delete</button>
+                        ${this.owned ? '<button type="button" class="delete-button p-4 rounded-full bg-[#FFA9AA]">Delete</button>' : ''}
                     </div>
                 </form>
             </div>

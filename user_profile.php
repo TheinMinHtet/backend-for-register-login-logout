@@ -91,6 +91,10 @@ if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPL
 
 // :id url
 // Parse the URL path to extract user_id for GET requests
+// :id url
+// Parse the URL path to extract user_id for GET requests
+// :id url
+// Parse the URL path to extract user_id for GET requests
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $requestUri = $_SERVER['REQUEST_URI']; // Get the full request URI
     $scriptName = $_SERVER['SCRIPT_NAME']; // Get the script name (e.g., /skillSwap/skill-swap/user_profile.php)
@@ -121,14 +125,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 u.city, 
                 u.profile_img, 
                 u.points,
+                m.memory_id,
                 m.img_name AS memory_img, 
                 m.description AS memory_description,
+                s.skill_id,
                 s.description AS skill_description,
+                s.name AS skill_name,
+                s.hours,
+                s.taught_count AS skill_taught,
                 l.learnt_count, 
-                l.taught_count
+                l.taught_count,
+                t.tag_id,
+                t.tag
             FROM user u
             LEFT JOIN memory m ON u.user_id = m.user_id
             LEFT JOIN skill s ON u.user_id = s.user_id
+            LEFT JOIN tag t ON s.skill_id = t.skill_id
             LEFT JOIN log l ON u.user_id = l.user_id
             WHERE u.user_id = ?
             ORDER BY u.user_id;
@@ -139,12 +151,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmt->execute();
         $result = $stmt->get_result();
 
-        $users = [];
+        $user = null;
+        $skills = [];
+        $memories = [];
+
         while ($row = $result->fetch_assoc()) {
             $userId = $row['user_id'];
+            $skillId = $row['skill_id'];
+            $tagId = $row['tag_id'];
 
-            if (!isset($users[$userId])) {
-                $users[$userId] = [
+            // Initialize user data if not already set
+            if ($user === null) {
+                $user = [
                     "user_id" => $row["user_id"],
                     "username" => $row["username"],
                     "email" => $row["email"],
@@ -168,33 +186,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 ];
             }
 
-            if (!empty($row['memory_img']) && !in_array($row['memory_img'], array_column($users[$userId]['memories'], 'img_name'))) {
-                $users[$userId]["memories"][] = [
+            // Add memory if exists and not already added
+            if (!empty($row['memory_img']) && !in_array($row['memory_img'], array_column($memories, 'img_name'))) {
+                $memories[] = [
+                    "memory_id" => $row["memory_id"],
                     "img_name" => $row["memory_img"],
                     "description" => $row["memory_description"]
                 ];
             }
 
-            if (!empty($row['skill_description'])) {
-                $users[$userId]["skills"][] = [
-                    "description" => $row["skill_description"]
+            // Add skill if not already present
+            if (!empty($row['skill_description']) && !isset($skills[$skillId])) {
+                $skills[$skillId] = [
+                    "skill_id" => $skillId,
+                    "description" => $row["skill_description"],
+                    "name" => $row["skill_name"],
+                    "hours" => $row["hours"],
+                    "skill_taught" => $row["skill_taught"],
+                    "tags" => [] // Initialize tags as an empty array
                 ];
+            }
+
+            // Add tags to the corresponding skill
+            if (!empty($tagId) && isset($skills[$skillId])) {
+                $tagName = json_decode($row['tag'], true);
+                if (!is_array($tagName)) {
+                    $tagName = [$row['tag']]; // Ensure it's an array
+                }
+
+                // Add tags to the skill's tags array
+                foreach ($tagName as $singleTag) {
+                    // Check if the tag is already added to avoid duplicates
+                    $tagExists = false;
+                    foreach ($skills[$skillId]['tags'] as $existingTag) {
+                        if ($existingTag['tag'] === $singleTag) {
+                            $tagExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!$tagExists) {
+                        $skills[$skillId]['tags'][] = [
+                            "tag_id" => $tagId,
+                            "tag" => $singleTag
+                        ];
+                    }
+                }
             }
         }
 
-        // Reset array index
-        $users = array_values($users);
+        // Attach memories and skills to the user object
+        if ($user !== null) {
+            $user["memories"] = $memories;
+            $user["skills"] = array_values($skills); // Reset array index for skills
+        }
 
         // Return the structured response
         echo json_encode([
             "status" => "success",
             "message" => "User data fetched successfully",
-            "user" => $users
+            "user" => $user
         ]);
         exit(); // Stop further execution
     }
 }
-
 // :id url
 
 // Fetch current profile data
@@ -272,33 +327,41 @@ if (empty($updates)) {
     // If no changes are detected, fetch the user data and return it
     $userQuery = "
         SELECT 
-    u.user_id, 
-    u.username, 
-    u.email, 
-    u.password, 
-    u.otp, 
-    u.otp_expiry, 
-    u.telegram_phone, 
-    u.telegram_username, 
-    u.created_at, 
-    u.status, 
-    u.bio, 
-    u.country, 
-    u.region, 
-    u.city, 
-    u.profile_img, 
-    u.points,
-    m.img_name AS memory_img, 
-    m.description AS memory_description,
-    s.description AS skill_description,
-    l.learnt_count, 
-    l.taught_count
-FROM user u
-LEFT JOIN memory m ON u.user_id = m.user_id
-LEFT JOIN skill s ON u.user_id = s.user_id
-LEFT JOIN log l ON u.user_id = l.user_id
-WHERE u.user_id = ?
-ORDER BY u.user_id;
+            u.user_id, 
+            u.username, 
+            u.email, 
+            u.password, 
+            u.otp, 
+            u.otp_expiry, 
+            u.telegram_phone, 
+            u.telegram_username, 
+            u.created_at, 
+            u.status, 
+            u.bio, 
+            u.country, 
+            u.region, 
+            u.city, 
+            u.profile_img, 
+            u.points,
+            m.memory_id,
+            m.img_name AS memory_img, 
+            m.description AS memory_description,
+            s.skill_id,
+            s.description AS skill_description,
+            s.name AS skill_name,
+            s.hours,
+            s.taught_count AS skill_taught,
+            l.learnt_count, 
+            l.taught_count,
+            t.tag_id,
+            t.tag
+        FROM user u
+        LEFT JOIN memory m ON u.user_id = m.user_id
+        LEFT JOIN skill s ON u.user_id = s.user_id
+        LEFT JOIN tag t ON s.skill_id = t.skill_id
+        LEFT JOIN log l ON u.user_id = l.user_id
+        WHERE u.user_id = ?
+        ORDER BY u.user_id;
     ";
 
     $stmt = $conn->prepare($userQuery);
@@ -306,12 +369,18 @@ ORDER BY u.user_id;
     $stmt->execute();
     $result = $stmt->get_result();
 
-    $users = [];
+    $user = null;
+    $skills = [];
+    $memories = [];
+
     while ($row = $result->fetch_assoc()) {
         $userId = $row['user_id'];
+        $skillId = $row['skill_id'];
+        $tagId = $row['tag_id'];
 
-        if (!isset($users[$userId])) {
-            $users[$userId] = [
+        // Initialize user data if not already set
+        if ($user === null) {
+            $user = [
                 "user_id" => $row["user_id"],
                 "username" => $row["username"],
                 "email" => $row["email"],
@@ -335,28 +404,65 @@ ORDER BY u.user_id;
             ];
         }
 
-        if (!empty($row['memory_img']) && !in_array($row['memory_img'], array_column($users[$userId]['memories'], 'img_name'))) {
-            $users[$userId]["memories"][] = [
+        // Add memory if exists and not already added
+        if (!empty($row['memory_img']) && !in_array($row['memory_img'], array_column($memories, 'img_name'))) {
+            $memories[] = [
+                "memory_id" => $row["memory_id"],
                 "img_name" => $row["memory_img"],
                 "description" => $row["memory_description"]
             ];
         }
 
-        if (!empty($row['skill_description'])) {
-            $users[$userId]["skills"][] = [
-                "description" => $row["skill_description"]
+        // Add skill if not already present
+        if (!empty($row['skill_description']) && !isset($skills[$skillId])) {
+            $skills[$skillId] = [
+                "skill_id" => $skillId,
+                "description" => $row["skill_description"],
+                "name" => $row["skill_name"],
+                "hours" => $row["hours"],
+                "skill_taught" => $row["skill_taught"],
+                "tags" => [] // Initialize tags as an empty array
             ];
         }
-    }
 
-    // Reset array index
-    $users = array_values($users);
+        // Add tags to the corresponding skill
+        if (!empty($tagId) && isset($skills[$skillId])) {
+            $tagName = json_decode($row['tag'], true);
+            if (!is_array($tagName)) {
+                $tagName = [$row['tag']]; // Ensure it's an array
+            }
+
+            // Add tags to the skill's tags array
+            foreach ($tagName as $singleTag) {
+                // Check if the tag is already added to avoid duplicates
+                $tagExists = false;
+                foreach ($skills[$skillId]['tags'] as $existingTag) {
+                    if ($existingTag['tag'] === $singleTag) {
+                        $tagExists = true;
+                        break;
+                    }
+                }
+
+                if (!$tagExists) {
+                    $skills[$skillId]['tags'][] = [
+                        "tag_id" => $tagId,
+                        "tag" => $singleTag
+                    ];
+                }
+            }
+        }
+    }
+    // Attach memories and skills to the user object
+    if ($user !== null) {
+        $user["memories"] = $memories;
+        $user["skills"] = array_values($skills); // Reset array index for skills
+    }
 
     // Return the structured response
     echo json_encode([
         "status" => "no_change",
         "message" => "No changes detected",
-        "user" => $users
+        "user" => $user
     ]);
 } else {
     // Execute update query
@@ -371,33 +477,41 @@ ORDER BY u.user_id;
         // Fetch updated user data
         $userQuery = "
             SELECT 
-    u.user_id, 
-    u.username, 
-    u.email, 
-    u.password, 
-    u.otp, 
-    u.otp_expiry, 
-    u.telegram_phone, 
-    u.telegram_username, 
-    u.created_at, 
-    u.status, 
-    u.bio, 
-    u.country, 
-    u.region, 
-    u.city, 
-    u.profile_img, 
-    u.points,
-    m.img_name AS memory_img, 
-    m.description AS memory_description,
-    s.description AS skill_description,
-    l.learnt_count, 
-    l.taught_count
-FROM user u
-LEFT JOIN memory m ON u.user_id = m.user_id
-LEFT JOIN skill s ON u.user_id = s.user_id
-LEFT JOIN log l ON u.user_id = l.user_id
-WHERE u.user_id = ?
-ORDER BY u.user_id;
+                u.user_id, 
+                u.username, 
+                u.email, 
+                u.password, 
+                u.otp, 
+                u.otp_expiry, 
+                u.telegram_phone, 
+                u.telegram_username, 
+                u.created_at, 
+                u.status, 
+                u.bio, 
+                u.country, 
+                u.region, 
+                u.city, 
+                u.profile_img, 
+                u.points,
+                m.memory_id
+                m.img_name AS memory_img, 
+                m.description AS memory_description,
+                s.skill_id,
+                s.description AS skill_description,
+                s.name AS skill_name,
+                s.hours,
+                s.taught_count AS skill_taught,
+                l.learnt_count, 
+                l.taught_count,
+                t.tag_id,
+                t.tag
+            FROM user u
+            LEFT JOIN memory m ON u.user_id = m.user_id
+            LEFT JOIN skill s ON u.user_id = s.user_id
+            LEFT JOIN tag t ON s.skill_id = t.skill_id
+            LEFT JOIN log l ON u.user_id = l.user_id
+            WHERE u.user_id = ?
+            ORDER BY u.user_id;
         ";
 
         $stmt = $conn->prepare($userQuery);
@@ -405,12 +519,18 @@ ORDER BY u.user_id;
         $stmt->execute();
         $result = $stmt->get_result();
 
-        $users = [];
+        $user = null;
+        $skills = [];
+        $memories = [];
+
         while ($row = $result->fetch_assoc()) {
             $userId = $row['user_id'];
+            $skillId = $row['skill_id'];
+            $tagId = $row['tag_id'];
 
-            if (!isset($users[$userId])) {
-                $users[$userId] = [
+            // Initialize user data if not already set
+            if ($user === null) {
+                $user = [
                     "user_id" => $row["user_id"],
                     "username" => $row["username"],
                     "email" => $row["email"],
@@ -434,28 +554,54 @@ ORDER BY u.user_id;
                 ];
             }
 
-            if (!empty($row['memory_img']) && !in_array($row['memory_img'], array_column($users[$userId]['memories'], 'img_name'))) {
-                $users[$userId]["memories"][] = [
+            // Add memory if exists and not already added
+            if (!empty($row['memory_img']) && !in_array($row['memory_img'], array_column($memories, 'img_name'))) {
+                $memories[] = [
+                    "memory_id" => $row["memory_id"],
                     "img_name" => $row["memory_img"],
                     "description" => $row["memory_description"]
                 ];
             }
 
-            if (!empty($row['skill_description'])) {
-                $users[$userId]["skills"][] = [
-                    "description" => $row["skill_description"]
+            // Add skill if not already present
+            if (!empty($row['skill_description']) && !isset($skills[$skillId])) {
+                $skills[$skillId] = [
+                    "skill_id" => $skillId,
+                    "description" => $row["skill_description"],
+                    "name" => $row["skill_name"],
+                    "hours" => $row["hours"],
+                    "skill_taught" => $row["skill_taught"],
+                    "tags" => [] // Initialize tags as an empty array
                 ];
+            }
+
+            // Add tags to the corresponding skill
+            if (!empty($tagId) && isset($skills[$skillId])) {
+                $tagName = json_decode($row['tag'], true);
+                if (!is_array($tagName)) {
+                    $tagName = [$row['tag']]; // Ensure it's an array
+                }
+
+                // Add tags to the skill's tags array
+                foreach ($tagName as $singleTag) {
+                    if (!in_array($singleTag, $skills[$skillId]['tags'])) {
+                        $skills[$skillId]['tags'][] = $singleTag;
+                    }
+                }
             }
         }
 
-        // Reset array index
-        $users = array_values($users);
+        // Attach memories and skills to the user object
+        if ($user !== null) {
+            $user["memories"] = $memories;
+            $user["skills"] = array_values($skills); // Reset array index for skills
+        }
 
         // Return the structured response
         echo json_encode([
             "status" => "success",
             "message" => "Profile updated successfully",
-            "user" => $users
+            "user" => $user
         ]);
     } else {
         echo json_encode(["status" => "error", "message" => "Failed to update profile", "error" => $stmt->error]);
