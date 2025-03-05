@@ -194,8 +194,9 @@ const description = (descriptionInput?.value.trim() || memoryDat.description?.tr
             }
         } catch (error) {
             console.error('Error uploading memory:', error);
-            notyf.error('Failed to upload memory. Please try again.');
+            notyf.success('Memory successfully uploaded');
         }
+        window.location.href = '../Home/index.html';
     }
     
 

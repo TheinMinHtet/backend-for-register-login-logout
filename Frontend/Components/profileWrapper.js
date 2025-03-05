@@ -4,11 +4,14 @@ class ProfileWrapper extends HTMLElement {
 
         this.forMemories;
 
+
+        this.fetchUserProfile();
+
         // Call the render method to initialize the component
         this.render();
 
         // Fetch user profile data from the server
-        this.fetchUserProfile();
+        
 
         
     }
@@ -217,10 +220,14 @@ class ProfileWrapper extends HTMLElement {
 
             // Log the fetched data to the console (for debugging)
             console.log("Fetched user profile:", data);
+           
 
             // Extract the `user` object from the response
             const userData = data.user;
             this.forMemories = userData;
+
+            localStorage.setItem("profileImg", userData.profile_img);
+            localStorage.setItem("user_id", userData.user_id);
             this.fetchMemories();
 
             // Update child components with the fetched user data
@@ -254,8 +261,8 @@ class ProfileWrapper extends HTMLElement {
         console.log(userData)
         if (imageSlider && userData.skills) {
             imageSlider.setAttribute("skills", JSON.stringify(userData.skills));
-            localStorage.setItem("profileImg", userData.profile_img);
-            localStorage.setItem("user_id", userData.user_id);
+           
+            
         }
     }
 
