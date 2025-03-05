@@ -12,7 +12,26 @@
     <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
     <link href="../output.css" rel="stylesheet">
-   
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-group input {
+            width: 100%;
+            padding-right: 40px;
+        }
+        .eye-icon {
+            position: absolute;
+            right: 10px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -20,22 +39,24 @@
             <h1>Set Password</h1>
             <div class="input-group">
                 <input id="password" name="password" type="password" placeholder="Create password">
+                <svg class="eye-icon" onclick="togglePassword('password', this)" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </div>
             <div class="input-group">
                 <input id="password2" name="password2" type="password" placeholder="Confirm password">
+                <svg class="eye-icon" onclick="togglePassword('password2', this)" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </div>
-            <button class="submit-btn" onclick="nextPage()">Next</button>
-            <div style="margin-top: 20px" class="flex flex-row gap-1 hover:cursor-pointer items-center self-start "><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg><h class="text-xl leading-normal font-bold underline" onclick="goBack()">Back</h></h></div>
-           
+            <button class="submit-btn" onclick="nextPage(event)">Next</button>
+            <div style="margin-top: 20px" class="flex flex-row gap-1 hover:cursor-pointer items-center self-start">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                <h class="text-xl leading-normal font-bold underline" onclick="goBack()">Back</h>
+            </div>
         </form>
-
     </div>
     <script>
         const notyf = new Notyf();
     
         function nextPage(event) {
-            event.preventDefault(); // Prevent form submission
-    
+            event.preventDefault();
             const password = document.getElementById("password").value;
             const password2 = document.getElementById("password2").value;
     
@@ -51,13 +72,11 @@
                 return;
             }
     
-            // Store password in localStorage (For demo purposes. Avoid storing passwords like this in production!)
             localStorage.setItem("password", password);
-    
             notyf.success("Password set successfully!");
     
             setTimeout(() => {
-                window.location.href = "./userCredentials.html"; // Change this to your next page
+                window.location.href = "./userCredentials.html";
             }, 1500);
         }
 
@@ -65,8 +84,16 @@
             window.history.back();
         }
     
-        // Attach event listener to form submit button
-        document.querySelector(".submit-btn").addEventListener("click", nextPage);
+        function togglePassword(inputId, icon) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.style.opacity = "0.5";
+            } else {
+                input.type = "password";
+                icon.style.opacity = "1";
+            }
+        }
     </script>
 </body>
 </html>

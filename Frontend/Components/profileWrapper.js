@@ -175,34 +175,10 @@ class ProfileWrapper extends HTMLElement {
     <div class="frame bg-[#E0E0E0] rounded-3xl p-12 w-4/5 relative
                 shadow-[10px_10px_20px_#bebebe,-10px_-10px_20px_#ffffff] 
                 border-[6px] border-[#f0f0f0]">
+                <p>There is no memory</p>
         
         <!-- Decorative Box Effect -->
-        <div class="absolute top-3 left-3 w-[96%] h-[98%] rounded-2xl 
-                    border-[2px] border-[#ffffff] shadow-inner"></div>
-        
-        <div class="image-container bg-[#f0f0f0] w-full h-[300px] rounded-2xl 
-                    shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]"></div>
-        
-        <div class="w-full flex items-center gap-8 mt-8">
-            <!-- Text Box with Soft Inset Effect -->
-            <div class="text-box flex-1 p-6 bg-[#f0f0f0] rounded-xl 
-                        shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]">
-                <p class="text-lg text-[#4a4a4a]">Lorem ipsum Lorem ipsum Lorem ipsum Lorem ipsum</p>
-            </div>
-
-            <!-- Profile Box (Circular with Depth) -->
-            <div class="profile-box w-[70px] h-[70px] bg-[#E0E0E0] rounded-full 
-                        shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] flex items-center justify-center">
-                <div class="profile-pic w-[60px] h-[60px] bg-[#ffffff] rounded-full shadow-inner"></div>
-            </div>
-
-            <!-- Skill Box (More Defined Container) -->
-            <div class="skill-box p-6 bg-[#f0f0f0] rounded-xl 
-                        shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]">
-                <p class="text-lg font-semibold text-[#4a4a4a]">Skill</p>
-            </div>
-        </div>
-    </div>
+       
 </div>
 
 
@@ -342,7 +318,7 @@ class ProfileWrapper extends HTMLElement {
                     let datar = {
                         description: memory.description,
                         img_name: memory.img_name,
-                        user_id: localStorage.getItem("authUser")
+                        user_id: memory.user_id
                     };
                     localStorage.setItem("memoryDatafg", JSON.stringify(datar));
             

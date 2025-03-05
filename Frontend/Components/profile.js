@@ -9,11 +9,11 @@ class Profile extends HTMLElement {
     render() {
         const size = this.getAttribute("size") || "";
         const clickable = this.getAttribute("clickable") || "yes";
-        const imgSrc = this.getAttribute("img-src");
+        const imgSrc = this.getAttribute("img-src") || false;
         const status = this.getAttribute("status") || "";
         const navi = this.getAttribute("navi") || "true";
 
-        const img = imgSrc ? "../../" + imgSrc : "../image/profile.jfif";
+        const img = imgSrc ? `../../${imgSrc}` : "../image/profile.jfif";
 
         // Determine status color and text
         const statusColor = status === "busy" ? "#FF9800" : "#22C55E";
@@ -131,6 +131,8 @@ class Profile extends HTMLElement {
                     if (data.status === "success") {
                         // Remove JWT token from localStorage
                         localStorage.removeItem('JWT');
+                        localStorage.removeItem('proproFile');
+                        localStorage.removeItem('newNoti');
                         // Redirect to login page
                         window.location.href = '../Login/login.html';
                     } else {

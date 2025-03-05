@@ -52,7 +52,7 @@ class SkillWrapper extends HTMLElement {
                 this.skills.sort((a, b) => b.days - a.days);
                 break;
             default:
-                this.skills = [...this.originalSkills];
+                this.skills.sort((a, b) => a.points - b.points);
         }
 
         this.render();

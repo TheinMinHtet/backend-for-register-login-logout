@@ -126,11 +126,11 @@
         <form id="login-form" method="POST">
             <div class="input-box">
                 <input type="text" name="username" placeholder="Username or Email" id="username" required>
-                <span class="clear-icon" onclick="clearInput('username')">&times;</span>
+                <span class="clear-icon1 clear-icon" >&times;</span>
             </div>
             <div class="input-box">
                 <input type="password" id="password" name="email" placeholder="Password" required>
-                <span class="clear-icon" onclick="clearInput('email')">&times;</span>
+                <span class="clear-icon2 clear-icon">&times;</span>
             </div>
             <button type="submit">Submit</button>
         </form>
@@ -147,6 +147,15 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const notyf = new Notyf();
+
+            document.querySelector(".clear-icon1").addEventListener("click", function() {
+                document.getElementById('username').value = "";
+
+            })
+
+            document.querySelector(".clear-icon2").addEventListener("click", function() {
+                document.getElementById('password').value = "";
+            })
 
             document.getElementById("login-form").addEventListener("submit", async function(event) {
                 event.preventDefault();

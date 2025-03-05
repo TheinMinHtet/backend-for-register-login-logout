@@ -148,7 +148,7 @@ class SearchBar extends HTMLElement {
         
         const keyword = input.value.trim();
         console.log(keyword)
-        if (keyword) {
+        if ((this.tags.length !== 0) || keyword) {
           console.log('Search initiated with keyword:', keyword);
           console.log('Current tags:', this.tags);
           try {

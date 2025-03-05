@@ -119,7 +119,7 @@ const imageFile = imageInput.files[0];
     let memoryDat = JSON.parse(localStorage.getItem("memoryDatafg")) || {};
 
 let img_name = memoryDat.img_name || "";
-const description = (memoryDat.description?.trim() || descriptionInput?.value.trim()) || "";
+const description = (descriptionInput?.value.trim() || memoryDat.description?.trim()) || "";
     
         if (!description) {
             notyf.error('Description and image are required.');
@@ -237,6 +237,8 @@ const description = (memoryDat.description?.trim() || descriptionInput?.value.tr
             console.error('Error deleting memory:', error);
             notyf.error('Failed to delete memory. Please try again.');
         }
+
+        window.location.href = "../Home/index.html";
     }
 
     resetForm() {

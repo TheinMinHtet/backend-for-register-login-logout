@@ -6,6 +6,13 @@ class Navigation extends HTMLElement {
         this.render(); // Initial render
         this.previousCount = parseInt(localStorage.getItem("previousCount")) || 0;
         this.totalNotifications = 0; 
+        this.newNotifications  = 0;
+        this.attachEventListeners();
+    }
+
+    connectedCallback() {
+        this.render();
+        this.attachEventListeners();
     }
 
     async fetchUserProfile() {
@@ -99,7 +106,7 @@ class Navigation extends HTMLElement {
     updateChildComponents(userData) {
         // Update <pro-file> component
         const profile = this.querySelector("pro-file");
-        if (profile && userData.profile_img) {
+        if (profile) {
             
 
             localStorage.setItem('proproFile',`${userData.profile_img}`);
@@ -108,16 +115,22 @@ class Navigation extends HTMLElement {
 
     render() {
         // Get the total notifications count (default to 0 if not set)
+        // Get the total notifications count (default to 0 if not set)
         const totalNotifications = this.totalNotifications || 0;
+        this.previousCount = parseInt(localStorage.getItem("newNoti")) || 0;
 
-    // Calculate the difference between new notifications and previous count
-    const newNotifications = totalNotifications - this.previousCount;
+// Calculate the difference between new notifications and previous count
+this.newNotifications = totalNotifications - this.previousCount;
 
-    // Determine if the `notiNo` attribute should be added or removed
-    const notiNoAttribute = newNotifications > 0 ? `notiNo="${newNotifications}"` : "";
+// Log the counts for debugging
+console.log("Previous count:", this.previousCount);
+console.log("New notifications:", this.newNotifications);
 
-    // Update localStorage with the new count
-    localStorage.setItem("previousCount", totalNotifications.toString());
+// Determine if the `notiNo` attribute should be added or removed
+const notiNoAttribute = this.newNotifications > 0 ? `notiNo="${this.newNotifications}"` : "";
+
+// Update localStorage with the new total count (not the difference)
+localStorage.setItem("previousCount", totalNotifications.toString());
 
         // Render the HTML with the updated `notiNo` attribute
         this.innerHTML = `  
@@ -136,11 +149,10 @@ class Navigation extends HTMLElement {
             </div>
             <search-bar class="flex-1"></search-bar>
             <div class="flex flex-row gap-9">
-                <a href="../Notification/notification.html">
-                    <rounded-icon ${newNotifications > 0 ? `notiNo="${newNotifications}"` : ""} class="relative">
+                
+                    <rounded-icon id="notification-icon" ${notiNoAttribute} class="relative">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bell"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                     </rounded-icon>
-                </a>
                 <pro-file size="40px" navi="false" img-src=${localStorage.getItem("proproFile")}></pro-file>
             </div>
         </div>
@@ -152,6 +164,15 @@ class Navigation extends HTMLElement {
 
     attachEventListeners() {
         // Attach any event listeners if needed
+        const notificationIcon = this.querySelector("#notification-icon");
+    if (notificationIcon) {
+        notificationIcon.addEventListener("click", () => {
+                this.newNotifications = 0;
+                localStorage.setItem('newNoti',this.totalNotifications);
+                window.location.href = "../Notification/notification.html";
+            
+        });
+    }
     }
 }
 
