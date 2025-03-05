@@ -49,7 +49,7 @@ function renderNotifications() {
         const notificationDiv = document.createElement("div");
         notificationDiv.classList.add("notification");
 
-        if (notification.description.startsWith("You have received a request")) {
+        if (notification.description.startsWith("You have received a request") && !localStorage.getItem('testt')) {
             notificationDiv.innerHTML = `
                 <div class="notification-content">
                     <p><strong>${notification.description}</strong></p>
@@ -64,12 +64,14 @@ function renderNotifications() {
             notificationDiv.querySelector(".accept-btn").addEventListener("click", function () {
                 notificationDiv.remove(); // Removes the entire notification from the UI
                 localStorage.removeItem("notiOne");
+                localStorage.setItem("testt",notification.description);
             });
 
             // Add event listener to the Decline button (optional)
             notificationDiv.querySelector(".decline-btn").addEventListener("click", function () {
                 notificationDiv.remove(); // Removes the notification on decline as well
-                localStorage.removeItem("notiTwo");
+                localStorage.removeItem("notiOne");
+                localStorage.setItem("testt",notification.description);
             });
         } else {
             // Default to memory-reminder type
