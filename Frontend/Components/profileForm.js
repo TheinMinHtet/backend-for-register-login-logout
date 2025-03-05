@@ -47,6 +47,25 @@ class ProfileForm extends HTMLElement {
     handleSubmit(e) {
     e.preventDefault();
 
+    const countrySelect = this.querySelector('.country');
+    const selectedCountryIndex = countrySelect.selectedIndex;
+    const selectedCountryOption = countrySelect.options[selectedCountryIndex];
+    const selectedCountryName = selectedCountryOption.textContent;
+
+    // Get the selected state name
+    const stateSelect = this.querySelector('.state');
+    const selectedStateIndex = stateSelect.selectedIndex;
+    const selectedStateOption = stateSelect.options[selectedStateIndex];
+    const selectedStateName = selectedStateOption.textContent;
+
+    // Get the selected city name
+    const citySelect = this.querySelector('.city');
+    const selectedCityIndex = citySelect.selectedIndex;
+    const selectedCityOption = citySelect.options[selectedCityIndex];
+    const selectedCityName = selectedCityOption.textContent;
+
+  
+
     // Initialize Notyf for notifications
     const notyf = new Notyf({
         duration: 5000,
@@ -69,12 +88,12 @@ class ProfileForm extends HTMLElement {
 
     const formData = {
         username: this.querySelector('#username').value.trim() || userData.username,    
-        password: this.querySelector("#password").value.trim() || userData.password,
+        password: userData.password,
         description: this.querySelector('#description').value.trim() || userData.bio,
         tags: this.selectedTags,
-        country: this.querySelector('.country').value.trim(),
-        region: this.querySelector('.state').value.trim(),
-        city: this.querySelector('.city').value.trim(),
+        country: selectedCountryName.trim(),
+        region: selectedStateName.trim(),
+        city:selectedCityName.trim(),
         telegramUsername: this.querySelector('#telegram').value.trim() || userData.telegram_phone,
         telegramPhone: this.querySelector('#phone').value.trim() || userData.telegram_phone
     };
@@ -202,14 +221,13 @@ class ProfileForm extends HTMLElement {
 
                 if (data.status === "success") {
                     notyf.success("Profile updated successfully!");
-                    window.location.href="../profile/index.html"
                 } else {
                     notyf.error("Failed to update profile.");
                     console.error('Failed to update profile:', data);
                 }
             })
             .catch(error => {
-                notyf.error("Error updating profile.");
+                // notyf.error("Error updating profile.");
                 console.error('Error updating profile:', error);
             });
         } else {
@@ -224,7 +242,9 @@ class ProfileForm extends HTMLElement {
 
     // Reset form without reloading
     this.querySelector('form').reset();
+    window.location.href = '../Profile/index.html'
 }
+
 
     attachEventListeners() {
         const form = this.querySelector('form');
@@ -305,13 +325,16 @@ class ProfileForm extends HTMLElement {
         fetch(config.cUrl, { headers: { "X-CSCAPI-KEY": config.ckey } })
             .then(response => response.json())
             .then(data => {
+                
                 data.forEach(country => {
                     const option = document.createElement('option');
                     option.value = country.name;
+                    this.querySelector('.country').setAttribute("data-state-name", country.name);
                     countrySelect.appendChild(option);
                 });
             })
             .catch(error => console.error('Error loading countries:', error));
+
 
         stateSelect.disabled = true;
         citySelect.disabled = true;
@@ -346,6 +369,7 @@ class ProfileForm extends HTMLElement {
                 const option = document.createElement('option');
                 option.value = state.iso2; // Use state code (e.g., "NL" for Nagaland)
                 option.textContent = state.name; // Display state name (e.g., "Nagaland")
+                this.querySelector('.state').setAttribute("data-state-name", state.name);
                 stateSelect.appendChild(option);
             });
         })
@@ -396,7 +420,7 @@ class ProfileForm extends HTMLElement {
     
             data.forEach(city => {
                 const option = document.createElement('option');
-                option.value = city.iso2;
+                option.value = city.name;
                 option.textContent = city.name;
                 citySelect.appendChild(option);
             });
@@ -519,17 +543,7 @@ class ProfileForm extends HTMLElement {
                                       text-gray-700 placeholder-gray-400">
                     </div>
 
-                     <div class="relative">
-                        <label for="telegram" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                        <input type="password" 
-                               id="password" 
-                               value=""${password}"
-                               placeholder="password"
-                               class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
-                                      shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
-                                      focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                                      text-gray-700 placeholder-gray-400">
-                    </div>
+                     
 
                     <!-- Telegram Input -->
                     <div class="relative">
@@ -609,7 +623,7 @@ class ProfileForm extends HTMLElement {
                     <!-- Action Buttons -->
                     <div class="flex gap-4 justify-evenly">
                         <but-ton class="p-4 rounded-full bg-[#91C4F2]" text="Submit" color="#91C4F2"></but-ton>
-                        <but-ton class="p-4 rounded-full bg-[#FFA9AA]" text="Delete" color="#FFA9AA" border="8px 8px 16px #FF8687, -8px -8px 16px #FEC3C3"></but-ton>
+                       
                     </div>
                 </form>
             </div>

@@ -20,9 +20,9 @@ class Rank extends HTMLElement {
         if (this.points <= 100) {
             return { rank: "Elite", image: "../image/elite.png" };
         } else if (this.points <= 150) {
-            return { rank: "Master", image: "../image/elite.png" };
+            return { rank: "Master", image: "../image/master.png" };
         } else {
-            return { rank: "Epic", image: "../image/elite.png" };
+            return { rank: "Epic", image: "../image/epic.png" };
         }
     }
 

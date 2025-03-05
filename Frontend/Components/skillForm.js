@@ -6,7 +6,7 @@ class SkillForm extends HTMLElement {
           return colors[Math.floor(Math.random() * colors.length)];
     
           };
-        this.availableTags = [
+          this.availableTags = [
             { id: 1, tag: "music", color: this.getRandomColor() },
             { id: 2, tag: "law", color: this.getRandomColor() },
             { id: 3, tag: "tech", color: this.getRandomColor() },
@@ -14,8 +14,44 @@ class SkillForm extends HTMLElement {
             { id: 5, tag: "cooking", color: this.getRandomColor() },
             { id: 6, tag: "writing", color: this.getRandomColor() },
             { id: 7, tag: "photography", color: this.getRandomColor() },
-            { id: 8, tag: "design", color: this.getRandomColor() }
+            { id: 8, tag: "design", color: this.getRandomColor() },
+            { id: 9, tag: "programming", color: this.getRandomColor() },
+            { id: 10, tag: "web development", color: this.getRandomColor() },
+            { id: 11, tag: "mobile development", color: this.getRandomColor() },
+            { id: 12, tag: "AI & machine learning", color: this.getRandomColor() },
+            { id: 13, tag: "cybersecurity", color: this.getRandomColor() },
+            { id: 14, tag: "data science", color: this.getRandomColor() },
+            { id: 15, tag: "game development", color: this.getRandomColor() },
+            { id: 16, tag: "blockchain", color: this.getRandomColor() },
+            { id: 17, tag: "graphic design", color: this.getRandomColor() },
+            { id: 18, tag: "UI/UX design", color: this.getRandomColor() },
+            { id: 19, tag: "video editing", color: this.getRandomColor() },
+            { id: 20, tag: "animation", color: this.getRandomColor() },
+            { id: 21, tag: "illustration", color: this.getRandomColor() },
+            { id: 22, tag: "interior design", color: this.getRandomColor() },
+            { id: 23, tag: "fashion design", color: this.getRandomColor() },
+            { id: 24, tag: "digital marketing", color: this.getRandomColor() },
+            { id: 25, tag: "SEO", color: this.getRandomColor() },
+            { id: 26, tag: "copywriting", color: this.getRandomColor() },
+            { id: 27, tag: "e-commerce", color: this.getRandomColor() },
+            { id: 28, tag: "finance", color: this.getRandomColor() },
+            { id: 29, tag: "entrepreneurship", color: this.getRandomColor() },
+            { id: 30, tag: "yoga", color: this.getRandomColor() },
+            { id: 31, tag: "meditation", color: this.getRandomColor() },
+            { id: 32, tag: "nutrition", color: this.getRandomColor() },
+            { id: 33, tag: "personal training", color: this.getRandomColor() },
+            { id: 34, tag: "mental health coaching", color: this.getRandomColor() },
+            { id: 35, tag: "teaching", color: this.getRandomColor() },
+            { id: 36, tag: "language learning", color: this.getRandomColor() },
+            { id: 37, tag: "public speaking", color: this.getRandomColor() },
+            { id: 38, tag: "sign language", color: this.getRandomColor() },
+            { id: 39, tag: "football", color: this.getRandomColor() },
+            { id: 40, tag: "basketball", color: this.getRandomColor() },
+            { id: 41, tag: "swimming", color: this.getRandomColor() },
+            { id: 42, tag: "hiking", color: this.getRandomColor() },
+            { id: 43, tag: "martial arts", color: this.getRandomColor() }
         ];
+        
         this.selectedTags = JSON.parse(localStorage.getItem("skillTagfg")) || [];
         this.owned = false;
 
@@ -344,12 +380,12 @@ class SkillForm extends HTMLElement {
                                         class="selected-tag px-4 py-1.5 rounded-full text-sm
                                                transition-all duration-200 ease-in-out hover:scale-105"
                                         style="background-color: ${this.getRandomColor()}; color: rgba(0,0,0,0.7)">
-                                  ${tag.tag} ${this.owned ? `×` : ``}
+                                  ${tag.tag} ${(this.owned && (Object.keys(skillData).length === 0)) ? `×` : ``}
                                 </button>
                               `).join('')}
                             </div> 
                     
-                        
+                            
                     </div>
 
                     <!-- Action Buttons -->

@@ -49,8 +49,7 @@ function renderNotifications() {
         const notificationDiv = document.createElement("div");
         notificationDiv.classList.add("notification");
 
-        // Check if it's a skill-request type
-        if (notification.description.startsWith("You have received a request")) {
+        if (notification.description.startsWith("You have received a request") && !localStorage.getItem('testt')) {
             notificationDiv.innerHTML = `
                 <div class="notification-content">
                     <p><strong>${notification.description}</strong></p>
@@ -60,6 +59,20 @@ function renderNotifications() {
                     <button class="decline-btn">Decline</button>
                 </div>
             `;
+
+            // Add event listener to the Accept button
+            notificationDiv.querySelector(".accept-btn").addEventListener("click", function () {
+                notificationDiv.remove(); // Removes the entire notification from the UI
+                localStorage.removeItem("notiOne");
+                localStorage.setItem("testt",notification.description);
+            });
+
+            // Add event listener to the Decline button (optional)
+            notificationDiv.querySelector(".decline-btn").addEventListener("click", function () {
+                notificationDiv.remove(); // Removes the notification on decline as well
+                localStorage.removeItem("notiOne");
+                localStorage.setItem("testt",notification.description);
+            });
         } else {
             // Default to memory-reminder type
             notificationDiv.innerHTML = `
@@ -72,6 +85,7 @@ function renderNotifications() {
         notificationsSection.appendChild(notificationDiv);
     });
 }
+
 
 // Function to handle accept/decline actions
 async function handleRequestAction(accept) {
