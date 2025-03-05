@@ -180,8 +180,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/upload') {
 
     // Bind parameters, allowing skill_id to be NULL
     if ($skill_id === null) {
+        // <<<<<<< HEAD
+        //         $memoryQuery = "INSERT INTO memory (user_id, img_name, description) VALUES (?, ?, ?)";
+        //         $stmt = $conn->prepare($memoryQuery);
+        //         $stmt->bind_param("iss", $user_id, $imagePath, $description);
+        // =======
+
         $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
         $stmt = $conn->prepare($memoryQuery);
+
+// =======
+//         $memoryQuery = "INSERT INTO memory (user_id, skill_id, img_name, description) VALUES (?, ?, ?, ?)";
+//         $stmt = $conn->prepare($memoryQuery);
+// >>>>>>> 33998cbc3132ebdc047f99633f4e94ddb4e00d32
         $null_skill_id = null; // Create a variable to hold the null value
         $stmt->bind_param("iiss", $user_id, $null_skill_id, $imagePath, $description);
     } else {
@@ -334,7 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/edit') {
                 unlink($old_img_name);
             }
         }
-        
+
         // Update memory
         $updateQuery = "UPDATE memory SET description = ?, img_name = ? WHERE memory_id = ?";
         $stmt = $conn->prepare($updateQuery);
@@ -397,7 +408,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     exit();
 }
 
-function countStreakDays($timestamps, $start_time) {
+function countStreakDays($timestamps, $start_time)
+{
     if (empty($timestamps)) {
         return 0;
     }
@@ -619,7 +631,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
         $learner_learnt_increment = 1; // Increment learnt_count for the learner
         $learner_taught_increment = 0; // Do not increment taught_count for the learner
 
-        $stmt->bind_param("iii", 
+        $stmt->bind_param(
+            "iii",
             $learner_id, // User ID for learner
             $learner_learnt_increment, // Increment learnt_count
             $learner_taught_increment  // Do not increment taught_count
@@ -630,7 +643,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === '/session') {
         $teacher_learnt_increment = 0; // Do not increment learnt_count for the teacher
         $teacher_taught_increment = 1; // Increment taught_count for the teacher
 
-        $stmt->bind_param("iii", 
+        $stmt->bind_param(
+            "iii",
             $teacher_id, // User ID for teacher
             $teacher_learnt_increment, // Do not increment learnt_count
             $teacher_taught_increment  // Increment taught_count

@@ -1,35 +1,29 @@
 <?php
-require "database_connection.php";
-
 header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *"); // Allow all origins
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS"); // Allow specific methods
-header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Allow specific headers
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS, DELETE, PUT");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 require 'vendor/autoload.php';
-
-define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'); // Use a secure key
+require "database_connection.php";
+define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
 
 function getTokenFromHeader()
 {
-    $headers = getallheaders(); // Get headers
-
+    $headers = getallheaders();
     foreach ($headers as $key => $value) {
         if (strtolower($key) === 'authorization') {
             return str_replace('Bearer ', '', $value);
         }
     }
-
-    // Alternative check via $_SERVER
     if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
         return str_replace('Bearer ', '', $_SERVER['HTTP_AUTHORIZATION']);
     } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
         return str_replace('Bearer ', '', $_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
     }
-
     return null;
 }
 
@@ -42,21 +36,46 @@ function verifyJWT($token)
     }
 }
 
-// Get & verify token
-$token = getTokenFromHeader();
-if (!$token) {
-    echo json_encode(["status" => "error", "message" => "Token missing"]);
+// Parse the request URI to determine the route
+$requestUri = $_SERVER['REQUEST_URI'];
+$basePath = '/skillSwap/skill-swap/'; // Adjust this to match your base path
+$route = substr($requestUri, strlen($basePath));
+
+// Handle the /user?user_id=:id route
+if (strpos($route, 'user') !== false && isset($_GET['user_id'])) {
+    $user_id = $_GET['user_id']; // Get user_id from query parameter
+
+    // Fetch memories for the specific user
+    $memoryQuery = "
+        SELECT memory.*, user.*, skill.name 
+        FROM memory 
+        LEFT JOIN user ON memory.user_id = user.user_id 
+        LEFT JOIN skill ON skill.skill_id = memory.skill_id 
+        WHERE memory.user_id = ?
+    ";
+    $stmt = $conn->prepare($memoryQuery);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $memoryResult = $stmt->get_result();
+
+    $memories = [];
+    if ($memoryResult->num_rows > 0) {
+        while ($row = $memoryResult->fetch_assoc()) {
+            $memories[] = $row;
+        }
+    }
+
+    // Prepare the response
+    $response = [
+        "memories" => $memories,
+    ];
+
+    echo json_encode($response);
     exit();
 }
 
-$decoded = verifyJWT($token);
-if (!$decoded) {
-    echo json_encode(["status" => "error", "message" => "Invalid token"]);
-    exit();
-}
-
-// Fetch skills from the database
-$skillQuery = "SELECT memory.*,user.*,skill.name FROM memory LEFT JOIN user ON memory.user_id=user.user_id LEFT JOIN skill ON skill.skill_id=memory.skill_id"; // Adjust the query as needed
+// Default route (fetch all skills, users, and tags)
+$skillQuery = "SELECT memory.*, user.*, skill.name FROM memory LEFT JOIN user ON memory.user_id = user.user_id LEFT JOIN skill ON skill.skill_id = memory.skill_id";
 $skillResult = $conn->query($skillQuery);
 
 $skills = [];

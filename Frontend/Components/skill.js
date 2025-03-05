@@ -106,12 +106,12 @@ if (skiller) {
 
         // Set skillId and skill data in localStorage
         localStorage.setItem("skillIdfg", this.getAttribute("skillId"));
+        localStorage.setItem("skillTagfg",this.getAttribute("tags"))
         let data = {
             description: this.getAttribute("description"),
             name: this.getAttribute("title"),
             hours: this.getAttribute("days"),
             skillTaught: this.getAttribute("taught_count"),
-            tags: JSON.stringify(this.getAttribute("tags")),
             user_id: this.getAttribute("userId")
         };
         localStorage.setItem("skillDatafg", JSON.stringify(data));

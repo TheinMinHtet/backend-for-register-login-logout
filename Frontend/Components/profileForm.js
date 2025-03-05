@@ -65,16 +65,18 @@ class ProfileForm extends HTMLElement {
     }
 
     // Get form data
+    const userData = JSON.parse(localStorage.getItem("authUserData")) || {};
+
     const formData = {
-        username: this.querySelector('#username').value.trim(),
-        password: this.querySelector("#password").value.trim(),
-        description: this.querySelector('#description').value.trim(),
+        username: this.querySelector('#username').value.trim() || userData.username,    
+        password: this.querySelector("#password").value.trim() || userData.password,
+        description: this.querySelector('#description').value.trim() || userData.bio,
         tags: this.selectedTags,
         country: this.querySelector('.country').value.trim(),
         region: this.querySelector('.state').value.trim(),
         city: this.querySelector('.city').value.trim(),
-        telegramUsername: this.querySelector('#telegram').value.trim(),
-        telegramPhone: this.querySelector('#phone').value.trim()
+        telegramUsername: this.querySelector('#telegram').value.trim() || userData.telegram_phone,
+        telegramPhone: this.querySelector('#phone').value.trim() || userData.telegram_phone
     };
 
     // Get the image file
@@ -90,6 +92,12 @@ class ProfileForm extends HTMLElement {
         notyf.error("Password is required.");
         return;
     }
+
+    
+
+
+   
+
     if (!formData.description) {
         notyf.error("Biography is required.");
         return;
@@ -194,6 +202,7 @@ class ProfileForm extends HTMLElement {
 
                 if (data.status === "success") {
                     notyf.success("Profile updated successfully!");
+                    window.location.href="../profile/index.html"
                 } else {
                     notyf.error("Failed to update profile.");
                     console.error('Failed to update profile:', data);
@@ -387,7 +396,7 @@ class ProfileForm extends HTMLElement {
     
             data.forEach(city => {
                 const option = document.createElement('option');
-                option.value = city.name;
+                option.value = city.iso2;
                 option.textContent = city.name;
                 citySelect.appendChild(option);
             });
@@ -408,6 +417,66 @@ class ProfileForm extends HTMLElement {
         });
     }
     render() {
+        const userData = JSON.parse(localStorage.getItem("authUserData")) || {};
+        let username,password,teleUsername,phone,biography = "";
+
+        
+        if(userData) {
+            username = userData.username
+            biography = userData.bio
+            password = userData.password
+            teleUsername = userData.telegram_username
+            phone = userData.telegram_phone
+           
+            
+          
+
+            
+
+        };
+
+      
+
+        const usernameInput = this.querySelector('#username');
+        const passwordInput = this.querySelector('#password');
+        const biographyInput = this.querySelector('#description');
+        const telegramInput = this.querySelector('#telegram');
+        const phoneInput = this.querySelector('#phone');
+        
+        // Assign values only after ensuring elements exist
+        const usernameValue = usernameInput?.value.trim() || username || '';
+        const biographyValue = biographyInput?.value.trim() || biography || "";
+        const phoneValue = phoneInput?.value.trim() || phone || "";
+        const passwordValue = passwordInput?.value.trim() || password || "";
+        const telegramValue = telegramInput?.value.trim() || teleUsername || "";
+        
+        // Ensure placeholder shows when input is empty
+        if (usernameInput && !username) {
+            usernameInput.value = ''; // Clear any existing value
+            usernameInput.placeholder = "Enter username";
+        }
+        
+        if (passwordInput && !password) {
+            passwordInput.value = '';
+            passwordInput.placeholder = "Enter description";
+        }
+
+        if (phoneInput && !phone) {
+            phoneValue.value = '';
+            phoneValue.placeholder = "Enter description";
+        }
+
+        if (biographyInput && !biography) {
+            biographyInput.value = '';
+            biographyInput.placeholder = "Enter description";
+        }
+
+        if (telegramInput && !teleUsername) {
+            telegramInput.value = '';
+            telegramInput.placeholder = "Enter description";
+        }
+
+        
         this.innerHTML = `
             <div class="max-w-2xl mx-auto p-8">
                 <h1 class="font-normal text-8xl leading-[112px] text-[#2F2F2F] pt-8 mb-16">Your Profile</h1>
@@ -443,6 +512,7 @@ class ProfileForm extends HTMLElement {
                         <input type="text" 
                                id="username" 
                                placeholder="username"
+                               value="${username}"
                                class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                       shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
                                       focus:outline-none focus:ring-2 focus:ring-blue-500/50
@@ -453,6 +523,7 @@ class ProfileForm extends HTMLElement {
                         <label for="telegram" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
                         <input type="password" 
                                id="password" 
+                               value=""${password}"
                                placeholder="password"
                                class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                       shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
@@ -465,6 +536,7 @@ class ProfileForm extends HTMLElement {
                         <label for="telegram" class="block text-sm font-medium text-gray-700 mb-2">Telegram Username</label>
                         <input type="text" 
                                id="telegram" 
+                               value="${teleUsername}"
                                placeholder="@username"
                                class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                       shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
@@ -477,6 +549,7 @@ class ProfileForm extends HTMLElement {
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                         <input type="tel" 
                                id="phone" 
+                               value="${phone}"
                                pattern="[0-9]{3}-[0-9]{3}-[0-9]{5}"
                                placeholder="123-456-7890"
                                class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
@@ -528,7 +601,9 @@ class ProfileForm extends HTMLElement {
                                   class="w-full px-6 py-4 bg-[#F1F0FB] rounded-xl border-none 
                                          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
                                          focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                                         text-gray-700 placeholder-gray-400"></textarea>
+                                         text-gray-700 placeholder-gray-400">
+                                         ${biography}
+                                         </textarea>
                     </div>
 
                     <!-- Action Buttons -->

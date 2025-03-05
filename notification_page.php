@@ -13,7 +13,8 @@ require "database_connection.php";
 define('JWT_SECRET', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
 
 // Function to extract token from the Authorization header
-function getTokenFromHeader() {
+function getTokenFromHeader()
+{
     $headers = getallheaders();
     foreach ($headers as $key => $value) {
         if (strtolower($key) === 'authorization') {
@@ -24,7 +25,8 @@ function getTokenFromHeader() {
 }
 
 // Function to verify the JWT
-function verifyJWT($token) {
+function verifyJWT($token)
+{
     try {
         return JWT::decode($token, new Key(JWT_SECRET, 'HS256'));
     } catch (Exception $e) {
@@ -154,7 +156,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
 
         // Send the combined response
         echo json_encode($response);
-
     } else {
         echo json_encode(["status" => "error", "message" => "Failed to insert data"]);
     }
@@ -167,18 +168,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['accept_request'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-
+    // Check if the request is for notifications
     if (isset($_GET['noti_info'])) {
         // Get user_id from query params if provided
         $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
 
+        // Fetch notifications for a specific user or all users
         if ($user_id) {
-            // Fetch notifications for a specific user
             $query = "SELECT * FROM notification WHERE user_id = ?";
             $stmt = $conn->prepare($query);
             $stmt->bind_param("i", $user_id);
         } else {
-            // Fetch all notifications if no user_id is provided
             $query = "SELECT * FROM notification";
             $stmt = $conn->prepare($query);
         }
@@ -192,46 +192,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
 
         $stmt->close();
-        $conn->close();
 
+        // Return the notifications
         if (!empty($notifications)) {
             echo json_encode(["status" => "success", "notifications" => $notifications]);
         } else {
             echo json_encode(["status" => "error", "message" => "No notifications found"]);
         }
-        exit();
     }
+    // Check if the request is for pending requests
+    else {
+        // Get user_id from query params if provided
+        $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
 
-    $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
+        // Fetch pending requests for a specific user or all users
+        if ($user_id) {
+            $query = "SELECT * FROM learner_teacher WHERE user_id = ? AND accept = false";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $user_id);
+        } else {
+            $query = "SELECT * FROM learner_teacher WHERE accept = false";
+            $stmt = $conn->prepare($query);
+        }
 
-    if ($user_id) {
-        // Fetch pending requests for a specific user
-        $query = "SELECT * FROM learner_teacher WHERE user_id = ? AND accept = false";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $user_id);
-    } else {
-        // Fetch all pending requests for all users
-        $query = "SELECT * FROM learner_teacher WHERE accept = false";
-        $stmt = $conn->prepare($query);
-    }
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-    $stmt->execute();
-    $result = $stmt->get_result();
+        $pendingRequests = [];
+        while ($row = $result->fetch_assoc()) {
+            $pendingRequests[] = $row;
+        }
 
-    $pendingRequests = [];
+        $stmt->close();
 
-    while ($row = $result->fetch_assoc()) {
-        $pendingRequests[] = $row;
-    }
-
-    $stmt->close();
-    $conn->close();
-
-    // Return the pending requests
-    if (!empty($pendingRequests)) {
-        echo json_encode(["status" => "success", "pending_requests" => $pendingRequests]);
-    } else {
-        echo json_encode(["status" => "error", "message" => "No pending requests found"]);
+        // Return the pending requests
+        if (!empty($pendingRequests)) {
+            echo json_encode(["status" => "success", "pending_requests" => $pendingRequests]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "No pending requests found"]);
+        }
     }
 }
 
@@ -286,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accept_request'])) {
     if ($stmt->execute()) {
         // Fetch the actual names for learner and teacher
         $nameQuery = "SELECT username FROM user WHERE user_id = ?";
-        
+
         $teacherStmt = $conn->prepare($nameQuery);
         $teacherStmt->bind_param("i", $teacher_id);
         $teacherStmt->execute();
@@ -355,7 +354,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accept_request'])) {
 
         // Send the combined response
         echo json_encode($response);
-
     } else {
         echo json_encode(["status" => "error", "message" => "Failed to update request status"]);
     }
@@ -366,5 +364,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accept_request'])) {
     $skillStmt->close();
     $notificationStmt->close();
 }
-
-?>
